@@ -1071,24 +1071,25 @@ body {
   }
 }
 
-
 /* =========================================================
    AIHub Works Prompt Hub v1.4
-   手機首頁壓縮版
-   目標：首屏更快看到搜尋、分類與提示詞卡片
+   手機版頁首大幅壓縮
    ========================================================= */
 
 @media (max-width: 640px) {
-  /* 頂部返回列壓縮 */
-  .topbar {
-    min-height: 30px !important;
-    padding: 4px 12px !important;
-    font-size: 11px !important;
+  .site-header {
+    padding: 0 !important;
   }
 
-  /* 手機 Hero 改為緊湊資訊區 */
+  .topbar {
+    min-height: 34px !important;
+    padding: 6px 14px !important;
+    font-size: 12px !important;
+  }
+
   .hero-block {
-    padding: 8px 12px 9px !important;
+    padding: 10px 14px 12px !important;
+    min-height: 0 !important;
   }
 
   .hero-body {
@@ -1100,24 +1101,27 @@ body {
   }
 
   .hero-eyebrow {
-    display: none !important;
+    margin: 0 0 5px !important;
+    font-size: 10px !important;
+    letter-spacing: .12em !important;
   }
 
   .hero-title {
-    margin: 0 0 2px !important;
-    font-size: 1.05rem !important;
-    line-height: 1.2 !important;
+    margin: 0 0 6px !important;
+    font-size: 1.15rem !important;
+    line-height: 1.28 !important;
   }
 
   .hero-tagline {
-    margin: 0 0 7px !important;
-    font-size: 1.35rem !important;
-    line-height: 1.12 !important;
-    white-space: nowrap !important;
+    margin: 0 0 10px !important;
+    font-size: 1.55rem !important;
+    line-height: 1.18 !important;
+    max-width: none !important;
   }
 
   .hero-right {
     display: block !important;
+    width: 100% !important;
   }
 
   .hero-quote-above {
@@ -1129,68 +1133,212 @@ body {
   }
 
   .search-input {
-    height: 40px !important;
-    min-height: 40px !important;
-    padding: 0 12px !important;
-    border-radius: 9px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 14px !important;
     font-size: 16px !important;
+    border-radius: 12px !important;
   }
 
-  /* 分類列壓縮並維持單行橫向滑動 */
   .cat-nav-wrap {
-    min-height: 38px !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 50 !important;
+    min-height: 46px !important;
   }
 
   .cat-nav {
-    padding: 4px 10px !important;
-    gap: 4px !important;
+    padding: 6px 10px !important;
+    gap: 6px !important;
   }
 
   .cat-btn {
-    min-height: 30px !important;
-    padding: 4px 8px !important;
-    border-radius: 8px !important;
-    font-size: 11px !important;
+    min-height: 34px !important;
+    padding: 5px 10px !important;
+    font-size: 12px !important;
+    border-radius: 10px !important;
   }
 
   .cat-count {
-    min-width: 18px !important;
+    min-width: 20px !important;
     padding: 1px 5px !important;
     font-size: 10px !important;
   }
 
-  /* 卡片區更接近分類列 */
   .main-grid {
-    padding-top: 10px !important;
-  }
-
-  /* 卡片略微壓縮，但保留可讀性 */
-  .card-header {
-    padding: 13px 14px 6px !important;
-  }
-
-  .card-preview {
-    padding: 0 14px 10px !important;
-    line-height: 1.65 !important;
-  }
-
-  .card-footer {
-    padding: 10px 14px 12px !important;
+    padding-top: 12px !important;
   }
 }
 
-/* 小型手機再縮一級 */
 @media (max-width: 390px) {
   .hero-title {
-    font-size: .98rem !important;
+    font-size: 1.05rem !important;
   }
 
   .hero-tagline {
-    font-size: 1.16rem !important;
+    font-size: 1.38rem !important;
   }
 
-  .search-input {
-    height: 38px !important;
-    min-height: 38px !important;
+  .topbar {
+    font-size: 11px !important;
+  }
+}
+
+
+/* =========================================================
+   AIHub Works Prompt Hub v1.5
+   手機卡片操作列與資訊層級優化
+   ========================================================= */
+
+@media (max-width: 640px) {
+  /* 卡片內容更緊湊 */
+  .card {
+    min-height: 0 !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+  }
+
+  .card-header {
+    padding: 12px 14px 5px !important;
+  }
+
+  .card-title {
+    margin-top: 3px !important;
+    font-size: 18px !important;
+    line-height: 1.35 !important;
+  }
+
+  .card-preview {
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 3 !important;
+    overflow: hidden !important;
+    padding: 4px 14px 10px !important;
+    font-size: 15px !important;
+    line-height: 1.7 !important;
+  }
+
+  /* Footer 改成資訊列 + 雙按鈕列 */
+  .card-footer {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 9px !important;
+    padding: 10px 14px 12px !important;
+    border-top: 1px solid rgba(17, 24, 39, .08) !important;
+  }
+
+  .card-footer > .card-chars {
+    grid-column: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+  }
+
+  .card-footer-actions {
+    grid-column: 1 !important;
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+
+  /* 複製次數移到資訊列視覺，不占按鈕欄 */
+  .card-copies {
+    position: absolute !important;
+    left: 104px !important;
+    bottom: 78px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    color: #657184 !important;
+    box-shadow: none !important;
+  }
+
+  .card {
+    position: relative !important;
+  }
+
+  .card-preview-btn,
+  .card-copy-prompt-btn {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 8px !important;
+    margin: 0 !important;
+    border-radius: 11px !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    transition: transform 150ms ease, opacity 150ms ease !important;
+  }
+
+  .card-preview-btn:active,
+  .card-copy-prompt-btn:active {
+    transform: scale(.98) !important;
+  }
+
+  .card-preview-btn {
+    border: 1px solid #d7dde7 !important;
+    background: #fff !important;
+    color: #172033 !important;
+  }
+
+  .card-copy-prompt-btn {
+    border: 1px solid #273444 !important;
+    background: #273444 !important;
+    color: #fff !important;
+  }
+
+  /* 案例列更緊湊 */
+  .case-toggle,
+  .case-summary {
+    min-height: 42px !important;
+    padding: 8px 14px !important;
+    font-size: 14px !important;
+    line-height: 1.3 !important;
+  }
+
+  .case-toggle {
+    border-top: 1px solid rgba(17, 24, 39, .08) !important;
+  }
+
+  /* 避免數字單位被拆行 */
+  .card-chars,
+  .card-copies,
+  .card-footer span {
+    word-break: keep-all !important;
+    overflow-wrap: normal !important;
+  }
+}
+
+/* 小螢幕微調，仍維持雙按鈕並列 */
+@media (max-width: 390px) {
+  .card-preview-btn,
+  .card-copy-prompt-btn {
+    font-size: 13px !important;
+    padding-inline: 6px !important;
+  }
+
+  .card-copies {
+    left: 92px !important;
   }
 }
