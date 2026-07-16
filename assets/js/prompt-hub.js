@@ -277,7 +277,7 @@ function renderCards() {
         <div class="card-top" onclick="openModal(${p.id})" style="cursor:pointer;">
           <span class="card-cat">${cat.icon} ${cat.label}</span>
           <div class="card-top-actions">
-            <button class="favorite-btn ${isFavorite(p.id) ? 'is-favorite' : ''}"
+<button class="favorite-btn ${isFavorite(p.id) ? 'is-favorite' : ''}"
               onclick="toggleFavorite(event, ${p.id})"
               aria-label="${isFavorite(p.id) ? '取消收藏' : '加入收藏'}"
               title="${isFavorite(p.id) ? '取消收藏' : '加入收藏'}">
