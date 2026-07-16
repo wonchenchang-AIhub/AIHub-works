@@ -954,3 +954,119 @@ body {
     font-size: 12px !important;
   }
 }
+
+
+/* =========================================================
+   AIHub Works Prompt Hub v1.3
+   桌機版改為單列超精簡頁首
+   ========================================================= */
+
+@media (min-width: 981px) {
+  .site-header {
+    padding: 0 !important;
+  }
+
+  .topbar {
+    max-width: 1400px !important;
+    min-height: 34px !important;
+    padding: 4px 18px !important;
+    font-size: 12px !important;
+  }
+
+  .hero-block {
+    max-width: 1400px !important;
+    padding: 8px 18px !important;
+  }
+
+  .hero-body {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.35fr) minmax(360px, .65fr) !important;
+    gap: 18px !important;
+    align-items: center !important;
+  }
+
+  .hero-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 18px !important;
+    min-width: 0 !important;
+  }
+
+  .hero-eyebrow {
+    display: none !important;
+  }
+
+  .hero-title {
+    margin: 0 !important;
+    font-size: 1rem !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    color: rgba(255,255,255,.92) !important;
+    flex: 0 0 auto !important;
+  }
+
+  .hero-tagline {
+    margin: 0 !important;
+    font-size: clamp(1.45rem, 1.75vw, 2rem) !important;
+    line-height: 1.05 !important;
+    white-space: nowrap !important;
+    max-width: none !important;
+    color: #f6c63f !important;
+    flex: 0 1 auto !important;
+  }
+
+  .hero-right {
+    display: grid !important;
+    grid-template-columns: auto minmax(280px, 1fr) !important;
+    gap: 12px !important;
+    align-items: center !important;
+  }
+
+  .hero-quote-above {
+    margin: 0 !important;
+    font-size: 10px !important;
+    white-space: nowrap !important;
+  }
+
+  .search-wrap {
+    margin: 0 !important;
+  }
+
+  .search-input {
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 12px !important;
+    font-size: 13px !important;
+    border-radius: 8px !important;
+  }
+
+  .cat-nav-wrap {
+    min-height: 38px !important;
+  }
+
+  .cat-nav {
+    padding: 4px 38px !important;
+    gap: 4px !important;
+  }
+
+  .cat-btn {
+    min-height: 28px !important;
+    padding: 3px 8px !important;
+    border-radius: 8px !important;
+    font-size: 11px !important;
+  }
+
+  .cat-count {
+    min-width: 18px !important;
+    padding: 1px 5px !important;
+    font-size: 10px !important;
+  }
+}
+
+/* 超寬螢幕避免內容被拉得過散 */
+@media (min-width: 1600px) {
+  .topbar,
+  .hero-block {
+    max-width: 1500px !important;
+  }
+}
