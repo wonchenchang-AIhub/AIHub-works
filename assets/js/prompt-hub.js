@@ -1,572 +1,434 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   app.js  ·  AI 提示詞資料庫（桌機版）
+   按鈕設計：
+     ① 複製提示詞（藍色）  ─ 複製主提示詞全文
+     ② 複製案例（綠色）    ─ 複製案例情境提示詞
+   案例內容存在 window.__caseCache，按鈕只傳 index，完全避開 HTML encode 問題。
+═══════════════════════════════════════════════════════════════════════════ */
 
-/* ════════════════════════════════════════════════════════════
-   AI 提示詞資料庫 · Mobile App Style  v4
-   關鍵：#app fixed → content-area flex:1 min-height:0 overflow-y:auto
-════════════════════════════════════════════════════════════ */
+/* ── State ─────────────────────────────────────────────────────────────── */
 
-:root {
-  --bg:        #f4f4f5;
-  --surface:   #ffffff;
-  --surface-2: #f8f8f9;
-  --border:    rgba(0,0,0,0.08);
-  --border-md: rgba(0,0,0,0.14);
+/* ── Google Form 複製記錄 ─────────────────────────────────────────────── */
+var _COPY_LOG_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSd0ceJqdNzp3cHFPvOxkiu4wPy76nHqioj9I-0JP8_CNCjbDg/formResponse';
 
-  --text:   #111827;
-  --text-2: #374151;
-  --text-3: #6b7280;
-  --text-4: #9ca3af;
-
-  --accent:    #2e3a46;
-  --accent-dk: #1a2027;
-  --accent-lt: #e0e1e3;
-  --green:     #059669;
-  --green-lt:  #d1fae5;
-
-  --cat-preset:  #7c3aed;
-  --cat-decision:#2563eb;
-  --cat-proposal:#0891b2;
-  --cat-comms:   #db2777;
-  --cat-writing: #059669;
-  --cat-ai-roles:#ea580c;
-  --cat-coach:   #be123c;
-  --cat-life:    #b45309;
-  --cat-routine: #0f766e;
-  --cat-research:#7e22ce;
-  --cat-tools:   #0369a1;
-
-  --header-h:  56px;
-  --tabs-h:    44px;
-  --tabbar-h:  64px;
-  --safe-top:    env(safe-area-inset-top,    0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --dur:  0.2s;
-  --ease: cubic-bezier(.4,0,.2,1);
+function logCopyToGoogleForm(prompt) {
+  try {
+    var data = new FormData();
+    data.append('entry.748276167',  String(prompt.id    || ''));
+    data.append('entry.324033027',  String(prompt.title  || ''));
+    data.append('entry.2019876852', String(prompt.cat    || ''));
+    data.append('entry.98204614',   new Date().toISOString());
+    fetch(_COPY_LOG_FORM_URL, { method: 'POST', mode: 'no-cors', body: data });
+  } catch (e) {}
 }
 
-*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-html { -webkit-text-size-adjust:100%; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Noto Sans TC', system-ui, sans-serif;
-  font-size: 15px; line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  overscroll-behavior: none;
-}
-button { font-family:inherit; cursor:pointer; border:none; background:none; }
-pre    { font-family:'JetBrains Mono', monospace; }
+let currentCat = 'all';
+let searchQuery = '';
 
-/* ════ APP SHELL ════════════════════════════════════════════
-   #app : 固定視窗，flex column
-   子元素：header(固定高) → tabs(固定高) → content-area(剩餘，可捲) → tabbar(固定高)
-════════════════════════════════════════════════════════════ */
+/* ── Case prompt cache ───────────────────────────────────────────────────── */
+window.__caseCache = [];
+let __modalCaseCache = [];
 
-/* ═══ Desktop Layout ═══════════════════════════════════════════════════════ */
-
-/* ── Site Header & Hero (Option B: Carbon × Teal Gold) ──────────────────── */
-.site-header {
-  background: #0c0f14;
-  border-bottom: none;
-  padding: 0;
-  position: sticky; top: 0; z-index: 100;
-  box-shadow: 0 1px 0 rgba(0,212,170,0.12);
+function storeCasePrompt(text) {
+  window.__caseCache.push(text);
+  return window.__caseCache.length - 1;
 }
-.site-header::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 3px;
-  background: linear-gradient(to bottom, #00d4aa, #f5c842);
-  z-index: 2;
-}
-.site-header::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: repeating-linear-gradient(
-    135deg, transparent, transparent 28px,
-    rgba(0,212,170,0.025) 28px, rgba(0,212,170,0.025) 29px
-  );
-  pointer-events: none; z-index: 0;
+function getCasePrompt(idx) {
+  return window.__caseCache[idx] || '';
 }
 
-.hero-block {
-  max-width: 1400px; margin: 0 auto;
-  padding: 8px 32px 7px 36px;
-  position: relative; z-index: 1;
-}
-.hero-eyebrow {
-  font-family: var(--font-mono);
-  font-size: 10px; font-weight: 500;
-  letter-spacing: 0.15em; text-transform: uppercase;
-  color: #94a3b8; margin-bottom: 4px;
-}
-.hero-body {
-  display: flex; align-items: center; gap: 16px;
-}
-.hero-left { flex: 0 0 480px; }
-.hero-right { flex: 1; min-width: 0; }
+/* ── Copy-count display (localStorage only) ─────────────────────────────── */
+var _LS_KEY     = 'prompt_copy_counts';
+var _memCounts  = null;
+var _INIT_COUNTS = {"1":18,"3":6,"4":8,"5":7,"6":7,"7":7,"9":9,"10":14,"11":11,"12":14,"13":11,"14":8,"15":8,"16":8,"17":8,"18":9,"19":22,"81":18,"20":9,"21":12,"22":9,"23":12,"24":11,"25":9,"26":12,"27":7,"28":5,"29":7,"30":7,"31":9,"32":8,"33":11,"34":10,"35":10,"36":11,"37":9,"38":8,"39":9,"40":7,"41":7,"43":7,"44":9,"45":7,"46":5,"47":8,"48":9,"49":5,"50":8,"51":5,"52":9,"8":16,"53":11,"54":9,"55":11,"56":8,"57":7,"58":7,"59":8,"60":9,"61":7,"62":10,"63":9,"64":12,"65":11,"66":12,"67":11,"68":6,"69":7,"70":7,"71":6,"72":7,"73":5,"74":22,"75":9,"76":12,"77":9,"78":9,"79":11,"80":11,"82":7,"83":11,"84":7,"85":11,"86":8,"87":9,"88":7,"89":7,"90":12,"91":9,"92":8,"102":9,"103":12,"104":10,"105":9,"106":11,"107":11,"108":11,"109":9};
 
-.hero-title {
-  font-family: var(--font-serif);
-  font-size: 16px; font-weight: 700;
-  color: #d4e8e4; line-height: 1.1;
-  margin-bottom: 2px; letter-spacing: -0.01em;
+function _lsLoad() {
+  try {
+    var stored = localStorage.getItem(_LS_KEY);
+    if (!stored || stored === '{}') return Object.assign({}, _INIT_COUNTS);
+    var data = JSON.parse(stored);
+    var merged = Object.assign({}, _INIT_COUNTS);
+    Object.keys(data).forEach(function(k) {
+      merged[k] = Math.max(parseInt(merged[k]) || 0, parseInt(data[k]) || 0);
+    });
+    return merged;
+  } catch(e) { return Object.assign({}, _INIT_COUNTS); }
 }
-.hero-tagline {
-  font-size: 10px; color: #f5c842;
-  margin-bottom: 0; font-weight: 400;
-}
-.hero-accent { color: #f5c842; font-weight: 400; }
-.hero-tagline .hero-accent { color: #f5c842; }
-.hero-block .search-wrap { max-width: 420px; }
-.hero-block .search-input {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(0,212,170,0.2);
-  color: #d4e8e4; font-size: 13px;
-  padding: 5px 14px; width: 100%;
-}
-.hero-block .search-input::placeholder { color: #2a4040; }
-.hero-block .search-input:focus {
-  border-color: rgba(0,212,170,0.5);
-  box-shadow: 0 0 0 3px rgba(0,212,170,0.08);
-  outline: none;
+function _lsSave(c) {
+  try { localStorage.setItem(_LS_KEY, JSON.stringify(c)); } catch(e) {}
 }
 
-/* ── Category Nav ────────────────────────────────────────────────────────── */
-.cat-nav-wrap {
-  display: flex; align-items: stretch;
-  background: #080b0f;
-  border-bottom: 1px solid rgba(0,212,170,0.1);
-  position: relative; z-index: 1;
-}
-.cat-nav {
-  display: flex; align-items: stretch;
-  overflow-x: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0,212,170,0.35) transparent;
-  padding: 0 8px;
-  flex: 1 1 auto;
-  scroll-behavior: smooth;
-}
-.cat-nav::-webkit-scrollbar { height: 6px; }
-.cat-nav::-webkit-scrollbar-track { background: transparent; }
-.cat-nav::-webkit-scrollbar-thumb {
-  background: rgba(0,212,170,0.35);
-  border-radius: 3px;
-}
-.cat-nav::-webkit-scrollbar-thumb:hover { background: rgba(0,212,170,0.55); }
-.cat-scroll-btn {
-  flex: 0 0 auto;
-  display: flex; align-items: center; justify-content: center;
-  width: 32px;
-  background: #080b0f;
-  color: #5ce0c6;
-  cursor: pointer;
-  border: none;
-  font-size: 16px;
-  transition: background .15s, color .15s;
-  user-select: none;
-}
-.cat-scroll-btn:hover { background: rgba(0,212,170,0.12); color: #00d4aa; }
-.cat-scroll-btn:active { background: rgba(0,212,170,0.2); }
-.cat-scroll-btn.left  { border-right: 1px solid rgba(0,212,170,0.1); }
-.cat-scroll-btn.right { border-left:  1px solid rgba(0,212,170,0.1); }
-.cat-scroll-btn[disabled] { opacity: .25; cursor: default; pointer-events: none; }
-.cat-btn {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 10px 14px;
-  font-size: 12.5px; font-weight: 500;
-  color: #8ab4b4;
-  border: none; border-bottom: 2px solid transparent;
-  background: none; cursor: pointer;
-  white-space: nowrap; flex-shrink: 0;
-  transition: color .18s, border-color .18s;
-}
-.cat-btn:hover { color: #c8e8e4; }
-.cat-btn.active { color: #00d4aa; border-bottom-color: #00d4aa; }
-.cat-icon { font-size: 14px; }
-.cat-count {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 20px; height: 18px; padding: 0 5px;
-  border-radius: 9px; font-size: 10px; font-weight: 700;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: #6aa0a0;
-}
-.cat-btn.active .cat-count {
-  background: rgba(0,212,170,0.12);
-  border-color: rgba(0,212,170,0.3);
-  color: #00d4aa;
+function getCount(id) {
+  return (_memCounts || _lsLoad())[id] || 0;
 }
 
-/* ── Main Grid ───────────────────────────────────────────────────────────── */
-.main-grid {
-  max-width: 1400px; margin: 0 auto;
-  padding: 24px 28px 80px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-  gap: 16px;
-  position: relative; z-index: 1;
-}
-.empty-state {
-  grid-column: 1/-1; text-align: center;
-  padding: 80px 0; color: var(--text-dim);
-}
-
-/* ── Card ────────────────────────────────────────────────────────────────── */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-  display: flex; flex-direction: column;
-  transition: box-shadow .2s, transform .2s;
-  cursor: pointer;
-}
-.card:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,.08);
-  transform: translateY(-2px);
-}
-.card-head {
-  padding: 14px 16px 10px;
-  display: flex; align-items: flex-start;
-  justify-content: space-between; gap: 8px;
-}
-.card-cat-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 10.5px; font-weight: 700;
-  padding: 3px 9px; border-radius: 6px;
-  border: 1px solid transparent;
-}
-.card-expand-btn {
-  color: var(--text-dim); font-size: 13px;
-  flex-shrink: 0; margin-top: 1px;
-  background: none; border: none; cursor: pointer;
-  padding: 2px 4px; line-height: 1;
-}
-.card-title {
-  font-size: 14px; font-weight: 700;
-  color: var(--text); line-height: 1.4;
-  padding: 0 16px; margin-bottom: 6px;
-}
-.card-scene {
-  font-size: 11.5px; color: #5ce0c6;
-  line-height: 1.5; padding: 0 16px;
-  margin-bottom: 6px;
-  display: flex; align-items: flex-start; gap: 5px;
-}
-.card-scene-icon { flex-shrink: 0; opacity: .85; }
-.card-scene-text {
-  display: -webkit-box; -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical; overflow: hidden;
-}
-.card-preview {
-  font-size: 12px; color: var(--text-dim);
-  line-height: 1.6; padding: 0 16px;
-  margin-bottom: 10px;
-  display: -webkit-box; -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical; overflow: hidden;
-}
-.card-footer {
-  padding: 8px 14px 12px;
-  margin-top: auto;
-  border-top: 1px solid var(--border);
-  display: flex; align-items: center;
-  justify-content: space-between; gap: 8px;
-}
-.card-meta { font-size: 11px; color: var(--text-dim); }
-.card-preview-btn {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 5px 10px; border-radius: 8px;
-  font-size: 11.5px; font-weight: 600;
-  color: var(--accent); cursor: pointer;
-  background: transparent; border: 1px solid var(--border-md);
-  transition: background .15s, transform .1s;
-}
-.card-preview-btn:hover { background: var(--accent-lt); }
-.card-preview-btn:active { transform: scale(.96); }
-.card-copy-prompt-btn {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 5px 12px; border-radius: 8px;
-  font-size: 11.5px; font-weight: 700;
-  color: #fff; cursor: pointer; border: none;
-  background: var(--accent);
-  transition: opacity .15s, transform .1s;
-}
-.card-copy-prompt-btn:active { transform: scale(.96); }
-.copy-pill {
-  font-size: 10px; font-weight: 600;
-  background: rgba(255,255,255,0.2);
-  border-radius: 4px; padding: 1px 5px;
+function refreshAllCountPills() {
+  if (!_memCounts) return;
+  document.querySelectorAll('.card[data-id]').forEach(function(card) {
+    var id  = parseInt(card.getAttribute('data-id'));
+    var cnt = (_memCounts[id] || 0);
+    var pill = card.querySelector('.card-copies');
+    if (!pill) return;
+    if (cnt > 0) {
+      pill.textContent = '⎘ ' + fmt(cnt);
+      pill.title = '已複製 ' + cnt + ' 次';
+      pill.classList.remove('card-copies-zero');
+    } else {
+      pill.textContent = '⎘ 0';
+      pill.classList.add('card-copies-zero');
+    }
+  });
 }
 
-/* Cases toggle */
-.cases-toggle {
-  padding: 6px 14px 8px;
-  border-top: 1px solid var(--border);
-}
-.cases-toggle-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 12px; font-weight: 600;
-  color: var(--text-dim); background: none;
-  border: none; cursor: pointer; padding: 0;
-}
-.cases-toggle-arrow { font-size: 10px; transition: transform .2s; }
-.cases-toggle-arrow.open { transform: rotate(90deg); }
-.cases-toggle-count {
-  font-size: 10px; font-weight: 700;
-  background: var(--border); border-radius: 4px;
-  padding: 1px 6px; color: var(--text-dim);
-}
-.cases-list { display: none; padding: 0 14px 10px; }
-.cases-list.open { display: block; }
-.case-item {
-  padding: 8px 0; border-top: 1px solid var(--border);
-}
-.case-item:first-child { border-top: none; }
-.case-item-header {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 4px; flex-wrap: wrap;
-}
-.case-tag {
-  display: inline-block;
-  font-size: 10px; font-weight: 700;
-  padding: 2px 7px; border-radius: 4px; margin-bottom: 4px;
-  color: var(--accent); background: var(--accent-lt);
-}
-.case-title {
-  font-size: 12.5px; font-weight: 700;
-  color: var(--text); margin-bottom: 4px; line-height: 1.35;
-}
-.case-scene {
-  font-size: 11.5px; color: var(--text-dim);
-  line-height: 1.55; margin-bottom: 5px;
-}
-.case-copy-btn {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 11px; font-weight: 600;
-  padding: 3px 9px; border-radius: 6px;
-  color: var(--accent); border: 1px solid var(--border-md);
-  background: var(--accent-lt); cursor: pointer;
+
+function incrementCount(id) {
+  var c = _memCounts || _lsLoad();
+  c[id] = (c[id] || 0) + 1;
+  _memCounts = c;
+  _lsSave(c);
+  return c[id];
 }
 
-/* ── Modal Overlay ───────────────────────────────────────────────────────── */
-.modal-overlay {
-  display: none;
-  position: fixed; inset: 0; z-index: 1000;
-  background: rgba(0,0,0,.55);
-  align-items: center; justify-content: center;
-  padding: 20px;
-}
-.modal-overlay.open { display: flex; }
-.modal {
-  background: var(--surface);
-  border-radius: 14px; width: 100%;
-  max-width: 700px; max-height: 88vh;
-  display: flex; flex-direction: column;
-  overflow: hidden;
-}
-.modal-header {
-  padding: 20px 24px 14px;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: flex-start;
-  justify-content: space-between; gap: 12px;
-}
-.modal-cat-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 10.5px; font-weight: 700;
-  padding: 3px 9px; border-radius: 6px;
-  border: 1px solid transparent; margin-bottom: 6px;
-}
-.modal-title {
-  font-size: 18px; font-weight: 700;
-  color: var(--text); line-height: 1.35;
-}
-.modal-close {
-  font-size: 20px; color: var(--text-dim);
-  background: none; border: none; cursor: pointer;
-  flex-shrink: 0; line-height: 1; padding: 2px;
-}
-.modal-scroll { flex: 1; min-height: 0; overflow-y: auto; }
-.modal-body { padding: 18px 24px; }
-.modal-scene {
-  font-size: 13px; color: #1a8a73;
-  background: #effaf7; border: 1px solid #b8ecdf;
-  border-radius: 8px; padding: 10px 14px;
-  margin-bottom: 14px; line-height: 1.6;
-}
-.modal-content {
-  font-family: var(--font-mono);
-  font-size: 12.5px; line-height: 1.75;
-  color: var(--text); white-space: pre-wrap;
-  word-break: break-word; overflow-wrap: break-word;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 8px; padding: 14px 16px;
-  display: block; max-width: 100%;
-}
-.modal-footer {
-  padding: 12px 24px 16px;
-  border-top: 1px solid var(--border);
-  display: flex; align-items: center;
-  justify-content: space-between; gap: 10px;
-}
-.modal-meta { font-size: 12px; color: var(--text-dim); }
-#copyBtn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 18px; border-radius: 9px;
-  font-size: 13px; font-weight: 700;
-  color: #fff; background: var(--accent);
-  border: none; cursor: pointer;
-  transition: opacity .15s;
-}
-#copyBtn:hover { opacity: .88; }
-#copyConfirm {
-  font-size: 11.5px; color: var(--accent);
-  font-weight: 600; opacity: 0;
-  transition: opacity .3s;
-}
-#copyConfirm.show { opacity: 1; }
-#modalCopyCount { font-size: 11px; color: var(--text-dim); }
+window.addEventListener('DOMContentLoaded', function() {
+  _memCounts = _lsLoad();
+  refreshAllCountPills();
+});
 
-/* Modal cases */
-.modal-cases { padding: 0 24px 18px; }
-.modal-case-item {
-  padding: 10px 0; border-top: 1px solid var(--border);
+function fmt(n) { return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n); }
+
+/* ── Helpers ────────────────────────────────────────────────────────────── */
+function catInfo(key) {
+  return CATEGORIES[key] || { label: key, icon: '◉', class: '' };
 }
-.modal-case-item:first-child { border-top: none; }
-.modal-case-title {
-  font-size: 13px; font-weight: 700;
-  color: var(--text); margin-bottom: 4px;
+function previewText(content) {
+  return content.replace(/#+\s/g, '').replace(/[│|]/g, '').replace(/\n+/g, ' ').trim();
 }
-.modal-cases-title {
-  font-size: 12.5px; font-weight: 700;
-  color: var(--text-dim); margin-bottom: 8px;
+function getCases(pid) {
+  return (typeof CASES_BY_PROMPT !== 'undefined' && CASES_BY_PROMPT[pid])
+    ? CASES_BY_PROMPT[pid] : [];
 }
-.modal-case-header {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 8px; flex-wrap: wrap;
+function caseTagClass(type) {
+  if (type === 'practice') return 'practice';
+  return '';
 }
-.modal-case-title {
-  font-size: 13px; font-weight: 700;
-  color: var(--text); flex: 1; min-width: 0;
-}
-.modal-case-section { margin-bottom: 10px; }
-.modal-case-section-label {
-  font-size: 11px; font-weight: 700;
-  color: var(--text-dim); margin-bottom: 3px;
-}
-.modal-case-text {
-  font-size: 12.5px; color: var(--text);
-  line-height: 1.6; white-space: pre-wrap;
-  word-break: break-word; overflow-wrap: break-word;
-}
-.modal-case-prompt {
-  font-family: var(--font-mono);
-  font-size: 12px; line-height: 1.7;
-  color: var(--text); white-space: pre-wrap;
-  word-break: break-word; overflow-wrap: break-word;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 8px; padding: 12px 14px;
-  display: block; max-width: 100%;
-}
-.modal-case-copy {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 11px; font-weight: 600;
-  padding: 3px 9px; border-radius: 6px;
-  color: var(--accent); border: 1px solid var(--border-md);
-  background: var(--accent-lt); cursor: pointer;
-  flex-shrink: 0;
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-/* ── Category colour tokens ──────────────────────────────────────────────── */
-.cat-preset   { --cat-color:#7c3aed; --cat-bg:#f5f3ff; --cat-border:#ddd6fe; }
-.cat-decision { --cat-color:#2563eb; --cat-bg:#eff6ff; --cat-border:#bfdbfe; }
-.cat-proposal { --cat-color:#0891b2; --cat-bg:#ecfeff; --cat-border:#a5f3fc; }
-.cat-comms    { --cat-color:#db2777; --cat-bg:#fdf2f8; --cat-border:#fbcfe8; }
-.cat-writing  { --cat-color:#059669; --cat-bg:#ecfdf5; --cat-border:#a7f3d0; }
-.cat-ai-roles,.cat-ai_roles { --cat-color:#ea580c; --cat-bg:#fff7ed; --cat-border:#fed7aa; }
-.cat-industry { --cat-color:#0284c7; --cat-bg:#f0f9ff; --cat-border:#bae6fd; }
-.cat-sales    { --cat-color:#15803d; --cat-bg:#f0fdf4; --cat-border:#bbf7d0; }
-.cat-research { --cat-color:#7e22ce; --cat-bg:#faf5ff; --cat-border:#e9d5ff; }
-.cat-routine  { --cat-color:#0f766e; --cat-bg:#f0fdfa; --cat-border:#99f6e4; }
-.cat-learning { --cat-color:#be123c; --cat-bg:#fff1f2; --cat-border:#fecdd3; }
-.cat-life     { --cat-color:#b45309; --cat-bg:#fffbeb; --cat-border:#fde68a; }
-.cat-pptx     { --cat-color:#c2410c; --cat-bg:#fff7ed; --cat-border:#fed7aa; }
-.cat-patent   { --cat-color:#4338ca; --cat-bg:#eef2ff; --cat-border:#c7d2fe; }
-
-/* ── Search ──────────────────────────────────────────────────────────────── */
-.search-wrap { position: relative; }
-.search-icon {
-  position: absolute; left: 13px; top: 50%;
-  transform: translateY(-50%);
-  font-size: 16px; color: var(--text-dim);
-  pointer-events: none;
+/* ── Copy utilities ─────────────────────────────────────────────────────── */
+function doPromptCopy(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied-prompt');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ 已複製！';
+    setTimeout(() => { btn.classList.remove('copied-prompt'); btn.innerHTML = orig; }, 2000);
+  }).catch(err => console.error('複製失敗', err));
 }
 
-/* ── Bg grid decoration ──────────────────────────────────────────────────── */
-.bg-grid {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background-image:
-    linear-gradient(var(--border) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border) 1px, transparent 1px);
-  background-size: 40px 40px; opacity: .35;
+function doCaseCopy(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied-case');
+    btn.textContent = '✓ 已複製';
+    setTimeout(() => { btn.classList.remove('copied-case'); btn.textContent = '⎘ 複製案例'; }, 2000);
+  }).catch(err => console.error('複製失敗', err));
 }
 
-/* ── Responsive ──────────────────────────────────────────────────────────── */
+/* ── Card rendering ─────────────────────────────────────────────────────── */
+function renderCards() {
+  window.__caseCache = [];
+  const grid = document.getElementById('cardGrid');
+  const q    = searchQuery.toLowerCase();
 
-.hero-quote-above {
-  max-width: 420px;
-  font-size: 10px;
-  color: #c8d8d8;
-  font-style: italic;
-  margin-bottom: 5px;
-  white-space: nowrap;
-  letter-spacing: 0.01em;
-}
-@media (max-width: 768px) {
-  .hero-block { padding: 6px 16px 5px 20px; }
-  .hero-body { flex-direction: column; gap: 6px; }
-  .hero-right { width: 100%; }
-  .cat-nav { padding: 0 8px; }
-  .main-grid { padding: 16px 12px 60px; grid-template-columns: 1fr; gap: 10px; }
-  .modal-box { max-height: 92vh; }
-  .modal-header, .modal-body, .modal-footer, .modal-cases { padding-left: 16px; padding-right: 16px; }
+  const filtered = PROMPTS.filter(p => {
+    const matchCat = currentCat === 'all' || p.cat === currentCat;
+    const matchQ   = !q || p.title.toLowerCase().includes(q) || p.content.toLowerCase().includes(q) || String(p.scene || '').toLowerCase().includes(q) || String(catInfo(p.cat).label || '').toLowerCase().includes(q);
+    return matchCat && matchQ;
+  });
+
+  document.getElementById('count-all').textContent = PROMPTS.length;
+
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="no-results"><span>◎</span><p>找不到符合「${searchQuery}」的提示詞</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map((p, i) => {
+    const cat   = catInfo(p.cat);
+    const cnt   = getCount(p.id);
+    const badge = cnt > 0
+      ? `<span class="card-copies" title="已複製 ${cnt} 次">⎘ ${fmt(cnt)}</span>`
+      : `<span class="card-copies card-copies-zero">⎘ 0</span>`;
+
+    const footer = `
+      <div class="card-footer">
+        <span class="card-chars">${p.content.length.toLocaleString()} 字元</span>
+        <div class="card-footer-actions">
+          ${badge}
+          <button class="card-preview-btn"
+            onclick="event.stopPropagation();openModal(${p.id})"
+            title="預覽完整提示詞">
+            👁 預覽
+          </button>
+          <button class="card-copy-prompt-btn"
+            onclick="cardCopyPromptById(event,this,${p.id})"
+            title="複製提示詞全文">
+            ⎘ 複製提示詞
+          </button>
+        </div>
+      </div>`;
+
+    const cases = getCases(p.id);
+    const casesHTML = cases.length ? (() => {
+      const caseItems = cases.map(c => {
+        const cacheIdx = storeCasePrompt(c.prompt);
+        return `
+            <div class="case-item">
+              <div class="case-item-header">
+                <span class="case-tag ${caseTagClass(c.type)}">${c.typeLabel}</span>
+                <button class="case-copy-btn"
+                  onclick="cardCopyCase(event,this,${cacheIdx})"
+                  title="複製此案例的完整提示詞">
+                  ⎘ 複製案例
+                </button>
+              </div>
+              <div class="case-title">${escapeHtml(c.title)}</div>
+              <div class="case-scene">${escapeHtml(c.scene)}</div>
+            </div>`;
+      }).join('');
+      return `
+      <div class="card-cases">
+        <button class="cases-toggle" onclick="toggleCases(event,this)">
+          <span class="cases-toggle-icon">▶</span>
+          <span class="cases-toggle-label">📋 實戰案例</span>
+          <span class="cases-toggle-count">${cases.length}</span>
+        </button>
+        <div class="cases-list">${caseItems}</div>
+      </div>`;
+    })() : '';
+
+    return `
+      <div class="card ${cat.class}" style="animation-delay:${Math.min(i*.04,.4)}s" data-id="${p.id}">
+        <div class="card-top" onclick="openModal(${p.id})" style="cursor:pointer;">
+          <span class="card-cat">${cat.icon} ${cat.label}</span>
+          <span class="card-arrow">↗</span>
+        </div>
+        <div class="card-title"  onclick="openModal(${p.id})" style="cursor:pointer;">${escapeHtml(p.title)}</div>
+        ${p.desc ? `<div class="card-scene"><span class="card-scene-icon">💡</span><span class="card-scene-text">${escapeHtml(p.desc)}</span></div>` : ''}
+        <div class="card-preview" onclick="openModal(${p.id})" style="cursor:pointer;">${escapeHtml(previewText(p.content))}</div>
+        ${footer}
+        ${casesHTML}
+      </div>`;
+  }).join('');
 }
 
-/* AIHub Works Responsive Integration */
-.topbar{max-width:1400px;margin:0 auto;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;font-family:"Noto Sans TC",sans-serif;font-size:14px;color:#625d58}
-.home-link{color:inherit;text-decoration:none;font-weight:500}.home-link:hover{color:#5a47d6}
-.hero-tagline{font-size:clamp(1.15rem,2.2vw,2rem)}
-@media (max-width: 900px){
-  .hero-body{grid-template-columns:1fr!important;gap:20px!important}
-  .hero-right{width:100%}
-  .main-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;padding:24px 18px 100px!important}
-  .modal{width:min(92vw,760px)!important}
+/* 卡片：複製提示詞（藍）*/
+function cardCopyPromptById(e, btn, id) {
+  e.stopPropagation();
+  const p = PROMPTS.find(x => x.id === id);
+  if (!p) return;
+  navigator.clipboard.writeText(p.content).then(() => {
+    const newCnt = incrementCount(id);
+    logCopyToGoogleForm(p);
+    btn.classList.add('copied-prompt');
+    btn.textContent = '✓ 已複製！';
+    setTimeout(() => { btn.classList.remove('copied-prompt'); btn.textContent = '⎘ 複製提示詞'; }, 2000);
+    const card = document.querySelector(`.card[data-id="${id}"]`);
+    if (card) {
+      const b = card.querySelector('.card-copies');
+      if (b) { b.textContent = `⎘ ${fmt(newCnt)}`; b.title = `已複製 ${newCnt} 次`; b.classList.remove('card-copies-zero'); b.classList.add('card-copies-bump'); setTimeout(() => b.classList.remove('card-copies-bump'), 500); }
+    }
+  }).catch(err => console.error('複製失敗', err));
 }
-@media (max-width: 640px){
-  body{padding-bottom:0}
-  .topbar{padding:12px 16px}
-  .hero-block{padding:22px 16px 18px!important}
-  .hero-eyebrow{font-size:11px!important}
-  .hero-title{font-size:clamp(1.7rem,8vw,2.35rem)!important;line-height:1.25!important}
-  .hero-tagline{font-size:1rem!important}
-  .hero-quote-above{display:none}
-  .search-input{font-size:16px!important;min-height:48px}
-  .cat-nav-wrap{position:sticky!important;top:0!important;z-index:40!important}
-  .cat-scroll-btn{display:none!important}
-  .cat-nav{padding:10px 12px!important;scroll-padding-inline:12px}
-  .cat-btn{flex:0 0 auto!important}
-  .main-grid{grid-template-columns:1fr!important;padding:16px 12px 72px!important;gap:14px!important}
-  .card{border-radius:16px!important}
-  .card-footer{align-items:flex-start!important;gap:10px!important}
-  .card-footer-actions{flex-wrap:wrap!important}
-  .modal-overlay{align-items:flex-end!important;padding:0!important}
-  .modal{width:100%!important;max-width:none!important;max-height:92vh!important;border-radius:22px 22px 0 0!important;margin:0!important}
-  .modal-header{padding:18px 18px 12px!important}
-  .modal-scroll{padding:0 16px!important}
-  .modal-footer{padding:12px 16px calc(12px + env(safe-area-inset-bottom))!important}
-  .modal-content{font-size:14px!important;white-space:pre-wrap!important}
+
+/* 卡片：複製案例（綠）*/
+function cardCopyCase(e, btn, cacheIdx) {
+  e.stopPropagation();
+  const text = getCasePrompt(cacheIdx);
+  if (!text) return;
+  doCaseCopy(text, btn);
 }
+
+/* 折疊開關 */
+function toggleCases(e, btn) {
+  e.stopPropagation();
+  const list = btn.nextElementSibling;
+  const open = btn.classList.toggle('open');
+  list.classList.toggle('open', open);
+}
+
+/* ── Modal ──────────────────────────────────────────────────────────────── */
+function openModal(id) {
+  __modalCaseCache = [];
+  const p = PROMPTS.find(x => x.id === id);
+  if (!p) return;
+  const cat = catInfo(p.cat);
+
+  const catTag = document.getElementById('modalCat');
+  catTag.textContent = `${cat.icon} ${cat.label}`;
+  catTag.className   = `modal-cat-tag ${cat.class}`;
+  document.getElementById('modalTitle').textContent = p.title;
+  const sceneEl = document.getElementById('modalScene');
+  if (p.desc) {
+    sceneEl.textContent = '💡 ' + p.desc;
+    sceneEl.style.display = 'block';
+  } else {
+    sceneEl.style.display = 'none';
+  }
+  document.getElementById('modalContent').textContent = p.content;
+
+  const cnt = getCount(id);
+  document.getElementById('modalCopyCount').textContent = cnt > 0 ? `已複製 ${cnt} 次` : '';
+
+  const cases       = getCases(id);
+  const casesPanelEl = document.getElementById('modalCases');
+  const casesListEl  = document.getElementById('modalCasesList');
+
+  if (cases.length) {
+    casesPanelEl.style.display = 'block';
+    casesListEl.innerHTML = cases.map(c => {
+      const idx = __modalCaseCache.length;
+      __modalCaseCache.push(c.prompt);
+      const tipsHtml = (c.tips && c.tips.length) ? `
+        <div class="modal-case-section">
+          <div class="modal-case-section-label">💡 進階練習</div>
+          <div class="modal-case-text">${c.tips.map(t => '• ' + escapeHtml(t)).join('\n')}</div>
+        </div>` : '';
+      return `
+        <div class="modal-case-item">
+          <div class="modal-case-header">
+            <span class="case-tag ${caseTagClass(c.type)}">${c.typeLabel}</span>
+            <span class="modal-case-title">${escapeHtml(c.title)}</span>
+            <button class="modal-case-copy"
+              onclick="modalCopyCase(this,${idx})"
+              title="複製此案例的完整提示詞">
+              ⎘ 複製案例
+            </button>
+          </div>
+          <div class="modal-case-section">
+            <div class="modal-case-section-label">📍 適用場景</div>
+            <div class="modal-case-text">${escapeHtml(c.scene)}</div>
+          </div>
+          <div class="modal-case-section">
+            <div class="modal-case-section-label">🔧 使用前準備</div>
+            <div class="modal-case-text">${escapeHtml(c.prep || '')}</div>
+          </div>
+          ${tipsHtml}
+          <div class="modal-case-section">
+            <div class="modal-case-section-label">📋 完整案例提示詞</div>
+            <pre class="modal-case-prompt" data-modal-case-idx="${idx}"></pre>
+          </div>
+        </div>`;
+    }).join('');
+    casesListEl.querySelectorAll('.modal-case-prompt[data-modal-case-idx]').forEach(pre => {
+      const idx = parseInt(pre.dataset.modalCaseIdx);
+      pre.textContent = __modalCaseCache[idx] || '';
+    });
+  } else {
+    casesPanelEl.style.display = 'none';
+    casesListEl.innerHTML = '';
+  }
+
+  const overlay = document.getElementById('modalOverlay');
+  document.getElementById('modalScroll').scrollTop = 0;
+  overlay.classList.add('open');
+  overlay.dataset.promptId = id;
+  document.body.style.overflow = 'hidden';
+  document.getElementById('copyConfirm').classList.remove('show');
+}
+
+/* Modal：複製提示詞（藍）*/
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const id = parseInt(document.getElementById('modalOverlay').dataset.promptId);
+  const p  = PROMPTS.find(x => x.id === id);
+  if (!p) return;
+  navigator.clipboard.writeText(p.content).then(() => {
+    const newCnt = incrementCount(id);
+    logCopyToGoogleForm(p);
+    const btn = document.getElementById('copyBtn');
+    btn.classList.add('copied-prompt');
+    btn.innerHTML = '<span class="copy-icon">✓</span> 已複製！';
+    setTimeout(() => { btn.classList.remove('copied-prompt'); btn.innerHTML = '<span class="copy-icon">⎘</span> 複製提示詞'; }, 2200);
+    const confirm = document.getElementById('copyConfirm');
+    confirm.textContent = `第 ${newCnt} 次複製`;
+    confirm.classList.add('show');
+    setTimeout(() => confirm.classList.remove('show'), 2400);
+    document.getElementById('modalCopyCount').textContent = `已複製 ${newCnt} 次`;
+    const card = document.querySelector(`.card[data-id="${id}"]`);
+    if (card) {
+      const b = card.querySelector('.card-copies');
+      if (b) { b.textContent = `⎘ ${fmt(newCnt)}`; b.title = `已複製 ${newCnt} 次`; b.classList.remove('card-copies-zero'); b.classList.add('card-copies-bump'); setTimeout(() => b.classList.remove('card-copies-bump'), 500); }
+      const cpBtn = card.querySelector('.card-copy-prompt-btn');
+      if (cpBtn) { cpBtn.classList.add('copied-prompt'); cpBtn.textContent = '✓ 已複製！'; setTimeout(() => { cpBtn.classList.remove('copied-prompt'); cpBtn.textContent = '⎘ 複製提示詞'; }, 2200); }
+    }
+  }).catch(err => console.error('複製失敗', err));
+});
+
+/* Modal：複製案例（綠）*/
+function modalCopyCase(btn, idx) {
+  const text = __modalCaseCache[idx];
+  if (!text) return;
+  doCaseCopy(text, btn);
+}
+
+/* ── Close modal ────────────────────────────────────────────────────────── */
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* ── Category nav ───────────────────────────────────────────────────────── */
+document.getElementById('catNav').addEventListener('click', e => {
+  const btn = e.target.closest('.cat-btn');
+  if (!btn) return;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentCat = btn.dataset.cat;
+  renderCards();
+});
+
+/* ── 分類列：左右箭頭捲動 + 滑鼠滾輪橫向捲動 + 箭頭自動啟用/禁用 ───────── */
+(function setupCatNavScroll() {
+  const nav      = document.getElementById('catNav');
+  const btnLeft  = document.getElementById('catScrollLeft');
+  const btnRight = document.getElementById('catScrollRight');
+  if (!nav || !btnLeft || !btnRight) return;
+
+  function updateArrows() {
+    const max = nav.scrollWidth - nav.clientWidth;
+    btnLeft.disabled  = nav.scrollLeft <= 2;
+    btnRight.disabled = nav.scrollLeft >= max - 2;
+  }
+
+  function scrollByAmount(dir) {
+    nav.scrollBy({ left: dir * Math.max(160, nav.clientWidth * 0.6), behavior: 'smooth' });
+  }
+
+  btnLeft.addEventListener('click', () => scrollByAmount(-1));
+  btnRight.addEventListener('click', () => scrollByAmount(1));
+
+  // 滑鼠垂直滾輪直接轉成橫向捲動（不需要按 Shift）
+  nav.addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      e.preventDefault();
+      nav.scrollLeft += e.deltaY;
+    }
+  }, { passive: false });
+
+  nav.addEventListener('scroll', updateArrows);
+  window.addEventListener('resize', updateArrows);
+  updateArrows();
+})();
+
+/* ── Search ─────────────────────────────────────────────────────────────── */
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  renderCards();
+});
+
+/* ── Init ───────────────────────────────────────────────────────────────── */
+renderCards();
