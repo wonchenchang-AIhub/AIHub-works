@@ -1070,3 +1070,127 @@ body {
     max-width: 1500px !important;
   }
 }
+
+
+/* =========================================================
+   AIHub Works Prompt Hub v1.4
+   手機首頁壓縮版
+   目標：首屏更快看到搜尋、分類與提示詞卡片
+   ========================================================= */
+
+@media (max-width: 640px) {
+  /* 頂部返回列壓縮 */
+  .topbar {
+    min-height: 30px !important;
+    padding: 4px 12px !important;
+    font-size: 11px !important;
+  }
+
+  /* 手機 Hero 改為緊湊資訊區 */
+  .hero-block {
+    padding: 8px 12px 9px !important;
+  }
+
+  .hero-body {
+    display: block !important;
+  }
+
+  .hero-left {
+    display: block !important;
+  }
+
+  .hero-eyebrow {
+    display: none !important;
+  }
+
+  .hero-title {
+    margin: 0 0 2px !important;
+    font-size: 1.05rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .hero-tagline {
+    margin: 0 0 7px !important;
+    font-size: 1.35rem !important;
+    line-height: 1.12 !important;
+    white-space: nowrap !important;
+  }
+
+  .hero-right {
+    display: block !important;
+  }
+
+  .hero-quote-above {
+    display: none !important;
+  }
+
+  .search-wrap {
+    margin: 0 !important;
+  }
+
+  .search-input {
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 12px !important;
+    border-radius: 9px !important;
+    font-size: 16px !important;
+  }
+
+  /* 分類列壓縮並維持單行橫向滑動 */
+  .cat-nav-wrap {
+    min-height: 38px !important;
+  }
+
+  .cat-nav {
+    padding: 4px 10px !important;
+    gap: 4px !important;
+  }
+
+  .cat-btn {
+    min-height: 30px !important;
+    padding: 4px 8px !important;
+    border-radius: 8px !important;
+    font-size: 11px !important;
+  }
+
+  .cat-count {
+    min-width: 18px !important;
+    padding: 1px 5px !important;
+    font-size: 10px !important;
+  }
+
+  /* 卡片區更接近分類列 */
+  .main-grid {
+    padding-top: 10px !important;
+  }
+
+  /* 卡片略微壓縮，但保留可讀性 */
+  .card-header {
+    padding: 13px 14px 6px !important;
+  }
+
+  .card-preview {
+    padding: 0 14px 10px !important;
+    line-height: 1.65 !important;
+  }
+
+  .card-footer {
+    padding: 10px 14px 12px !important;
+  }
+}
+
+/* 小型手機再縮一級 */
+@media (max-width: 390px) {
+  .hero-title {
+    font-size: .98rem !important;
+  }
+
+  .hero-tagline {
+    font-size: 1.16rem !important;
+  }
+
+  .search-input {
+    height: 38px !important;
+    min-height: 38px !important;
+  }
+}
