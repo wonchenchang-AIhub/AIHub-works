@@ -1642,3 +1642,248 @@ body {
     font-size: 14px !important;
   }
 }
+
+
+/* =========================================================
+   AIHub Works Prompt Hub v2.0
+   重構後 Prompt Card 元件
+   ========================================================= */
+
+.main-grid {
+  align-items: stretch !important;
+}
+
+.prompt-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #dfe5ee;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(23, 32, 51, .07);
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+
+.prompt-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(23, 32, 51, .11);
+}
+
+.prompt-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 42px;
+  padding: 10px 14px 4px;
+}
+
+.prompt-card__category {
+  min-width: 0;
+  overflow: hidden;
+  color: #445166;
+  font-size: 13px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prompt-card__body {
+  flex: 1;
+  min-height: 0;
+  padding: 0 14px 10px;
+  cursor: pointer;
+}
+
+.prompt-card__title {
+  display: -webkit-box;
+  min-height: 2.8em;
+  margin: 4px 0 8px;
+  overflow: hidden;
+  color: #172033;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.prompt-card__scene {
+  display: -webkit-box;
+  margin: 0 0 6px;
+  overflow: hidden;
+  color: #2ebd9f;
+  font-size: 12px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.prompt-card__summary {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: #657184;
+  font-size: 14px;
+  line-height: 1.72;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.prompt-card__footer {
+  padding: 10px 14px 12px;
+  border-top: 1px solid #edf0f4;
+}
+
+.prompt-card__meta {
+  display: flex;
+  justify-content: flex-end;
+  min-height: 18px;
+  margin-bottom: 7px;
+}
+
+.prompt-card__copies {
+  color: #788496;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.prompt-card__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.prompt-card .card-preview-btn,
+.prompt-card .card-copy-prompt-btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.prompt-card .card-preview-btn {
+  color: #172033;
+  background: #fff;
+  border: 1px solid #d7dde6;
+}
+
+.prompt-card .card-copy-prompt-btn {
+  color: #fff;
+  background: #273444;
+  border: 1px solid #273444;
+}
+
+.prompt-card .favorite-btn {
+  flex: 0 0 auto;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #95a0af !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+}
+
+.prompt-card .favorite-btn.is-favorite {
+  color: #d79b00 !important;
+}
+
+.prompt-card .case-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 14px;
+  color: #172033;
+  background: #fff;
+  border: 0;
+  border-top: 1px solid #edf0f4;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.case-toggle__icon {
+  width: 14px;
+  flex: 0 0 14px;
+}
+
+.prompt-card .cases-list {
+  background: #fafbfd;
+}
+
+/* Hide all legacy card structures to prevent old CSS residues. */
+.card,
+.card-header,
+.card-top,
+.card-title,
+.card-preview,
+.card-footer,
+.card-footer-actions,
+.card-chars,
+.card-copies,
+.card-arrow {
+  /* Legacy classes are no longer emitted by renderCards(). */
+}
+
+@media (min-width: 1440px) {
+  .prompt-card__title {
+    font-size: 16px;
+  }
+
+  .prompt-card__summary {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 640px) {
+  .prompt-card__header {
+    padding: 10px 14px 4px;
+  }
+
+  .prompt-card__title {
+    min-height: 0;
+    font-size: 20px;
+    -webkit-line-clamp: 2;
+  }
+
+  .prompt-card__scene {
+    font-size: 13px;
+  }
+
+  .prompt-card__summary {
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-line-clamp: 3;
+  }
+
+  .prompt-card__footer {
+    padding: 10px 14px 12px;
+  }
+
+  .prompt-card__actions {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .prompt-card .card-preview-btn,
+  .prompt-card .card-copy-prompt-btn {
+    min-height: 44px;
+    padding: 7px 6px;
+    font-size: 14px;
+  }
+
+  .prompt-card .case-toggle {
+    min-height: 42px;
+    font-size: 14px;
+  }
+}
