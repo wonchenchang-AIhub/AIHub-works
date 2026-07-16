@@ -569,3 +569,320 @@ pre    { font-family:'JetBrains Mono', monospace; }
   .modal-footer{padding:12px 16px calc(12px + env(safe-area-inset-bottom))!important}
   .modal-content{font-size:14px!important;white-space:pre-wrap!important}
 }
+
+
+/* =========================================================
+   AIHub Works Prompt Hub v1.1
+   視覺與易讀性優化
+   ========================================================= */
+
+:root {
+  --hub-brand: #2257d6;
+  --hub-accent: #1b8f78;
+  --hub-text: #172033;
+  --hub-muted: #657184;
+  --hub-surface: #ffffff;
+  --hub-border: #dfe5ee;
+  --hub-bg: #f6f8fb;
+}
+
+/* 頁首壓縮與品牌統一 */
+.site-header {
+  background: #0d1219;
+}
+
+.topbar {
+  max-width: 1180px;
+  padding: 10px 20px;
+  font-size: 13px;
+}
+
+.hero-block {
+  max-width: 1180px;
+  margin-inline: auto;
+  padding: 20px 20px 18px !important;
+}
+
+.hero-body {
+  grid-template-columns: minmax(0, 1.05fr) minmax(360px, .95fr) !important;
+  gap: 36px !important;
+  align-items: end !important;
+}
+
+.hero-eyebrow {
+  margin-bottom: 6px !important;
+  font-size: 11px !important;
+  letter-spacing: .15em !important;
+}
+
+.hero-title {
+  margin: 0 0 8px !important;
+  font-size: clamp(1.55rem, 2.2vw, 2.35rem) !important;
+  line-height: 1.25 !important;
+}
+
+.hero-tagline {
+  margin: 0 !important;
+  max-width: 640px;
+  font-size: clamp(2rem, 3vw, 3.25rem) !important;
+  line-height: 1.18 !important;
+  color: #f6c63f !important;
+}
+
+.hero-right {
+  align-self: end;
+}
+
+.hero-quote-above {
+  margin: 0 0 8px !important;
+  font-size: 13px !important;
+  color: rgba(255,255,255,.78) !important;
+}
+
+.search-wrap {
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px !important;
+  border: 1px solid rgba(45, 207, 177, .35) !important;
+  border-radius: 12px !important;
+  background: rgba(255,255,255,.06) !important;
+  color: #fff !important;
+  font-size: 16px !important;
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: rgba(255,255,255,.42) !important;
+}
+
+.search-input:focus {
+  border-color: #2dcfb1 !important;
+  box-shadow: 0 0 0 4px rgba(45,207,177,.12) !important;
+}
+
+/* 分類列 */
+.cat-nav-wrap {
+  border-top: 1px solid rgba(255,255,255,.06);
+  border-bottom: 1px solid #ccd5e1;
+  background: #0f1722 !important;
+}
+
+.cat-nav {
+  max-width: 100%;
+  padding: 8px 44px !important;
+  gap: 6px !important;
+}
+
+.cat-btn {
+  min-height: 36px;
+  padding: 7px 11px !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+  white-space: nowrap;
+}
+
+.cat-btn.active {
+  background: rgba(45,207,177,.12) !important;
+}
+
+.cat-count {
+  min-width: 22px;
+  padding: 2px 6px !important;
+  font-size: 11px !important;
+}
+
+/* 主內容區 */
+body {
+  background: var(--hub-bg) !important;
+}
+
+.main-grid {
+  max-width: 1180px !important;
+  margin-inline: auto !important;
+  padding: 24px 20px 90px !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+}
+
+/* 卡片 */
+.card {
+  min-height: 238px;
+  border: 1px solid var(--hub-border) !important;
+  border-radius: 16px !important;
+  background: var(--hub-surface) !important;
+  box-shadow: 0 8px 24px rgba(23,32,51,.07) !important;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(23,32,51,.11) !important;
+}
+
+.card-header {
+  padding: 16px 16px 8px !important;
+}
+
+.card-title {
+  font-size: 17px !important;
+  line-height: 1.45 !important;
+}
+
+.card-preview {
+  padding: 0 16px 14px !important;
+  font-size: 14px !important;
+  line-height: 1.75 !important;
+  color: var(--hub-muted) !important;
+}
+
+.card-footer {
+  padding: 12px 16px 14px !important;
+  gap: 10px !important;
+}
+
+.card-chars,
+.card-copies {
+  font-size: 12px !important;
+}
+
+.card-footer-actions {
+  gap: 7px !important;
+}
+
+.card-preview-btn,
+.card-copy-prompt-btn {
+  min-height: 36px;
+  padding: 7px 10px !important;
+  border-radius: 9px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+.card-copy-prompt-btn {
+  background: #273444 !important;
+}
+
+.case-summary,
+.case-toggle {
+  font-size: 13px !important;
+}
+
+/* Modal */
+.modal {
+  width: min(900px, 92vw) !important;
+  max-height: 88vh !important;
+  border-radius: 20px !important;
+}
+
+.modal-title {
+  font-size: clamp(1.35rem, 2vw, 1.85rem) !important;
+}
+
+.modal-content {
+  font-size: 15px !important;
+  line-height: 1.8 !important;
+}
+
+.copy-btn {
+  min-height: 44px;
+  padding-inline: 18px !important;
+  border-radius: 10px !important;
+}
+
+/* 大螢幕：四欄 */
+@media (min-width: 1440px) {
+  .main-grid {
+    max-width: 1400px !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .hero-block,
+  .topbar {
+    max-width: 1400px;
+  }
+}
+
+/* 平板 */
+@media (max-width: 980px) {
+  .hero-body {
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+  }
+
+  .hero-right {
+    width: 100%;
+  }
+
+  .main-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* 手機 */
+@media (max-width: 640px) {
+  .topbar {
+    padding: 10px 14px;
+  }
+
+  .hero-block {
+    padding: 18px 14px 14px !important;
+  }
+
+  .hero-title {
+    font-size: 1.45rem !important;
+  }
+
+  .hero-tagline {
+    font-size: 1.9rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .hero-quote-above {
+    display: none;
+  }
+
+  .search-input {
+    min-height: 46px;
+  }
+
+  .cat-nav {
+    padding: 8px 12px !important;
+  }
+
+  .main-grid {
+    grid-template-columns: 1fr !important;
+    padding: 14px 12px 72px !important;
+    gap: 14px !important;
+  }
+
+  .card {
+    min-height: unset;
+  }
+
+  .card-title {
+    font-size: 17px !important;
+  }
+
+  .card-preview {
+    font-size: 14px !important;
+  }
+
+  .card-footer {
+    align-items: flex-start !important;
+  }
+
+  .card-footer-actions {
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .card-preview-btn,
+  .card-copy-prompt-btn {
+    width: 100%;
+  }
+}
