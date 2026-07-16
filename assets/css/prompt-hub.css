@@ -886,3 +886,71 @@ body {
     width: 100%;
   }
 }
+
+
+/* =========================================================
+   AIHub Works Prompt Hub v1.2
+   桌機頁首高度大幅壓縮
+   ========================================================= */
+
+@media (min-width: 981px) {
+  .topbar {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+
+  .hero-block {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+
+  .hero-body {
+    grid-template-columns: minmax(0, 1.25fr) minmax(420px, .75fr) !important;
+    gap: 24px !important;
+    align-items: center !important;
+  }
+
+  .hero-eyebrow {
+    margin-bottom: 2px !important;
+  }
+
+  .hero-title {
+    margin-bottom: 2px !important;
+    font-size: clamp(1.2rem, 1.55vw, 1.75rem) !important;
+    line-height: 1.2 !important;
+  }
+
+  .hero-tagline {
+    font-size: clamp(1.7rem, 2.25vw, 2.6rem) !important;
+    line-height: 1.1 !important;
+    max-width: none !important;
+  }
+
+  .hero-right {
+    align-self: center !important;
+  }
+
+  .hero-quote-above {
+    margin-bottom: 4px !important;
+    font-size: 11px !important;
+  }
+
+  .search-input {
+    min-height: 40px !important;
+    height: 40px !important;
+    font-size: 14px !important;
+    border-radius: 9px !important;
+  }
+
+  .cat-nav {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+  }
+
+  .cat-btn {
+    min-height: 30px !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+    font-size: 12px !important;
+  }
+}
