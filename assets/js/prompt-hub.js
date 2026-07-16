@@ -181,10 +181,8 @@ function doCaseCopy(text, btn) {
 
 /* ── Card rendering ─────────────────────────────────────────────────────── */
 function renderCards() {
-  window.__caseCache = [];
   const grid = document.getElementById('cardGrid');
-  const q    = searchQuery.toLowerCase();
-
+  const q = searchQuery.trim().toLowerCase();
   const favoriteIds = getFavoriteIds();
   const recentIds = loadIdList(RECENT_KEY);
 
@@ -193,21 +191,22 @@ function renderCards() {
     if (currentCat === 'favorites') matchCat = favoriteIds.includes(Number(p.id));
     if (currentCat === 'recent') matchCat = recentIds.includes(Number(p.id));
 
+    const categoryLabel = String(catInfo(p.cat).label || '').toLowerCase();
     const matchQ = !q ||
-      p.title.toLowerCase().includes(q) ||
-      p.content.toLowerCase().includes(q) ||
+      String(p.title || '').toLowerCase().includes(q) ||
+      String(p.content || '').toLowerCase().includes(q) ||
       String(p.scene || '').toLowerCase().includes(q) ||
       String(p.desc || '').toLowerCase().includes(q) ||
-      String(catInfo(p.cat).label || '').toLowerCase().includes(q);
+      categoryLabel.includes(q);
 
     return matchCat && matchQ;
   });
 
   if (currentCat === 'recent') {
-    filtered.sort((a, b) => recentIds.indexOf(Number(a.id)) - recentIds.indexOf(Number(b.id)));
+    filtered.sort((a, b) =>
+      recentIds.indexOf(Number(a.id)) - recentIds.indexOf(Number(b.id))
+    );
   }
-
-  document.getElementById('count-all').textContent = PROMPTS.length;
 
   if (!filtered.length) {
     const message = currentCat === 'favorites'
@@ -215,121 +214,78 @@ function renderCards() {
       : currentCat === 'recent'
         ? '尚無最近瀏覽紀錄'
         : `找不到符合「${searchQuery}」的提示詞`;
-    grid.innerHTML = `<div class="no-results"><span>◎</span><p>${message}</p></div>`;
+
+    grid.innerHTML = `
+      <div class="no-results">
+        <span>◎</span>
+        <p>${message}</p>
+      </div>`;
     return;
   }
 
-  grid.innerHTML = filtered.map((p, i) => {
-    const cat   = catInfo(p.cat);
-    const cnt   = getCount(p.id);
-    const badge = cnt > 0
-      ? `<span class="card-copies" title="已複製 ${cnt} 次">⎘ ${fmt(cnt)}</span>`
-      : `<span class="card-copies card-copies-zero">⎘ 0</span>`;
-
-    const footer = `
-      <div class="card-footer">
-<div class="card-footer-actions">
-          ${badge}
-          <button class="card-preview-btn"
-            onclick="event.stopPropagation();openModal(${p.id})"
-            title="查看完整提示詞">
-            👁 查看
-          </button>
-          <button class="card-copy-prompt-btn"
-            onclick="cardCopyPromptById(event,this,${p.id})"
-            title="複製提示詞全文">
-            ⎘ 複製提示詞
-          </button>
-        </div>
-      </div>`;
-
-    const cases = getCases(p.id);
-    const casesHTML = cases.length ? (() => {
-      const caseItems = cases.map(c => {
-        const cacheIdx = storeCasePrompt(c.prompt);
-        return `
-            <div class="case-item">
-              <div class="case-item-header">
-                <span class="case-tag ${caseTagClass(c.type)}">${c.typeLabel}</span>
-                <button class="case-copy-btn"
-                  onclick="cardCopyCase(event,this,${cacheIdx})"
-                  title="複製此案例的完整提示詞">
-                  ⎘ 複製案例
-                </button>
-              </div>
-              <div class="case-title">${escapeHtml(c.title)}</div>
-              <div class="case-scene">${escapeHtml(c.scene)}</div>
-            </div>`;
-      }).join('');
-      return `
-      <div class="card-cases">
-        <button class="cases-toggle" onclick="toggleCases(event,this)">
-          <span class="cases-toggle-icon">▶</span>
-          <span class="cases-toggle-label">📋 實戰案例</span>
-          <span class="cases-toggle-count">${cases.length}</span>
-        </button>
-        <div class="cases-list">${caseItems}</div>
-      </div>`;
-    })() : '';
+  grid.innerHTML = filtered.map(p => {
+    const cat = catInfo(p.cat);
+    const cases = getCasesForPrompt(p.id);
+    const copies = getCopyCount(p.id);
+    const favorite = isFavorite(p.id);
 
     return `
-      <div class="card ${cat.class}" style="animation-delay:${Math.min(i*.04,.4)}s" data-id="${p.id}">
-        <div class="card-top" onclick="openModal(${p.id})" style="cursor:pointer;">
-          <span class="card-cat">${cat.icon} ${cat.label}</span>
-          <div class="card-top-actions">
-<button class="favorite-btn ${isFavorite(p.id) ? 'is-favorite' : ''}"
-              onclick="toggleFavorite(event, ${p.id})"
-              aria-label="${isFavorite(p.id) ? '取消收藏' : '加入收藏'}"
-              title="${isFavorite(p.id) ? '取消收藏' : '加入收藏'}">
-              ${isFavorite(p.id) ? '★' : '☆'}
-            </button>
-</div>
+      <article class="prompt-card">
+        <header class="prompt-card__header">
+          <span class="prompt-card__category">${cat.icon} ${cat.label}</span>
+          <button
+            class="favorite-btn ${favorite ? 'is-favorite' : ''}"
+            type="button"
+            onclick="toggleFavorite(event, ${p.id})"
+            aria-label="${favorite ? '取消收藏' : '加入收藏'}"
+            title="${favorite ? '取消收藏' : '加入收藏'}">
+            ${favorite ? '★' : '☆'}
+          </button>
+        </header>
+
+        <div class="prompt-card__body" onclick="openModal(${p.id})">
+          <h2 class="prompt-card__title">${escapeHtml(p.title)}</h2>
+          ${p.scene ? `<p class="prompt-card__scene">${escapeHtml(p.scene)}</p>` : ''}
+          <p class="prompt-card__summary">${escapeHtml(p.content)}</p>
         </div>
-        <div class="card-title"  onclick="openModal(${p.id})" style="cursor:pointer;">${escapeHtml(p.title)}</div>
-        ${p.desc ? `<div class="card-scene"><span class="card-scene-icon">💡</span><span class="card-scene-text">${escapeHtml(p.desc)}</span></div>` : ''}
-        <div class="card-preview" onclick="openModal(${p.id})" style="cursor:pointer;">${escapeHtml(previewText(p.content))}</div>
-        ${footer}
-        ${casesHTML}
-      </div>`;
+
+        <footer class="prompt-card__footer">
+          <div class="prompt-card__meta">
+            <span class="prompt-card__copies" title="複製次數">⎘ ${copies}</span>
+          </div>
+
+          <div class="prompt-card__actions">
+            <button
+              class="card-preview-btn"
+              type="button"
+              onclick="openModal(${p.id})">
+              👁 查看
+            </button>
+            <button
+              class="card-copy-prompt-btn"
+              type="button"
+              onclick="copyPrompt(event, ${p.id})">
+              ⎘ 複製提示詞
+            </button>
+          </div>
+        </footer>
+
+        ${cases.length ? `
+          <button
+            class="case-toggle"
+            type="button"
+            onclick="toggleCases(event, ${p.id})"
+            aria-expanded="false">
+            <span class="case-toggle__icon">▶</span>
+            <span>📋 實戰案例（${cases.length}）</span>
+          </button>
+          <div class="cases-list" id="cases-${p.id}"></div>
+        ` : ''}
+      </article>
+    `;
   }).join('');
 }
 
-/* 卡片：複製提示詞（藍）*/
-function cardCopyPromptById(e, btn, id) {
-  e.stopPropagation();
-  const p = PROMPTS.find(x => x.id === id);
-  if (!p) return;
-  navigator.clipboard.writeText(p.content).then(() => {
-    const newCnt = incrementCount(id);
-    logCopyToGoogleForm(p);
-    btn.classList.add('copied-prompt');
-    btn.textContent = '✓ 已複製！';
-    setTimeout(() => { btn.classList.remove('copied-prompt'); btn.textContent = '⎘ 複製提示詞'; }, 2000);
-    const card = document.querySelector(`.card[data-id="${id}"]`);
-    if (card) {
-      const b = card.querySelector('.card-copies');
-      if (b) { b.textContent = `⎘ ${fmt(newCnt)}`; b.title = `已複製 ${newCnt} 次`; b.classList.remove('card-copies-zero'); b.classList.add('card-copies-bump'); setTimeout(() => b.classList.remove('card-copies-bump'), 500); }
-    }
-  }).catch(err => console.error('複製失敗', err));
-}
-
-/* 卡片：複製案例（綠）*/
-function cardCopyCase(e, btn, cacheIdx) {
-  e.stopPropagation();
-  const text = getCasePrompt(cacheIdx);
-  if (!text) return;
-  doCaseCopy(text, btn);
-}
-
-/* 折疊開關 */
-function toggleCases(e, btn) {
-  e.stopPropagation();
-  const list = btn.nextElementSibling;
-  const open = btn.classList.toggle('open');
-  list.classList.toggle('open', open);
-}
-
-/* ── Modal ──────────────────────────────────────────────────────────────── */
 function openModal(id) {
   __modalCaseCache = [];
   const p = PROMPTS.find(x => x.id === id);
