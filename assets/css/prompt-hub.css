@@ -1495,3 +1495,150 @@ body {
     height: 30px !important;
   }
 }
+
+
+/* =========================================================
+   AIHub Works Prompt Hub v1.8
+   卡片最終精簡版
+   ========================================================= */
+
+/* 強制移除舊版重複元素 */
+.card-arrow,
+.card-chars {
+  display: none !important;
+}
+
+/* 卡片頂部：分類在左、收藏在右 */
+.card-top {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+}
+
+.card-top-actions {
+  margin-left: auto !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* 收藏星號縮小 */
+.favorite-btn {
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  border: 0 !important;
+  background: transparent !important;
+  font-size: 18px !important;
+  padding: 0 !important;
+  color: #8b95a5 !important;
+}
+
+.favorite-btn.is-favorite {
+  color: #d79b00 !important;
+  background: transparent !important;
+}
+
+/* 摘要固定三行 */
+.card-preview {
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 3 !important;
+  overflow: hidden !important;
+  max-height: calc(1.7em * 3) !important;
+}
+
+/* 卡片高度與留白壓縮 */
+.card {
+  min-height: 0 !important;
+}
+
+.card-header {
+  padding: 12px 14px 4px !important;
+}
+
+.card-title {
+  margin-top: 6px !important;
+  margin-bottom: 4px !important;
+}
+
+.card-preview {
+  padding: 0 14px 10px !important;
+}
+
+.card-footer {
+  display: block !important;
+  padding: 10px 14px !important;
+}
+
+.card-footer-actions {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+}
+
+.card-preview-btn,
+.card-copy-prompt-btn {
+  width: 100% !important;
+  min-height: 38px !important;
+  padding: 7px 8px !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  font-size: 13px !important;
+}
+
+/* 案例列壓縮 */
+.case-toggle {
+  min-height: 36px !important;
+  padding: 7px 14px !important;
+}
+
+/* Desktop header 再瘦一點 */
+@media (min-width: 981px) {
+  .topbar {
+    min-height: 28px !important;
+    padding: 2px 14px !important;
+  }
+
+  .hero-block {
+    padding: 6px 14px !important;
+  }
+
+  .search-input {
+    height: 34px !important;
+    min-height: 34px !important;
+  }
+
+  .cat-nav-wrap {
+    min-height: 34px !important;
+  }
+
+  .cat-nav {
+    padding-top: 3px !important;
+    padding-bottom: 3px !important;
+  }
+
+  .cat-btn {
+    min-height: 26px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .favorite-btn {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 19px !important;
+  }
+
+  .card-preview {
+    -webkit-line-clamp: 3 !important;
+    max-height: calc(1.75em * 3) !important;
+  }
+
+  .card-preview-btn,
+  .card-copy-prompt-btn {
+    min-height: 44px !important;
+    font-size: 14px !important;
+  }
+}
