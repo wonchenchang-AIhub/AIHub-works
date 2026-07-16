@@ -25,6 +25,52 @@ function logCopyToGoogleForm(prompt) {
 let currentCat = 'all';
 let searchQuery = '';
 
+/* ── Favorites & recently viewed ───────────────────────────────────────── */
+const FAVORITES_KEY = 'aihub_favorite_prompt_ids';
+const RECENT_KEY = 'aihub_recent_prompt_ids';
+const RECENT_LIMIT = 20;
+
+function loadIdList(key) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || '[]');
+    return Array.isArray(value) ? value.map(Number).filter(Number.isFinite) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveIdList(key, ids) {
+  try { localStorage.setItem(key, JSON.stringify(ids)); } catch (e) {}
+}
+
+function getFavoriteIds() { return loadIdList(FAVORITES_KEY); }
+function isFavorite(id) { return getFavoriteIds().includes(Number(id)); }
+
+function toggleFavorite(e, id) {
+  if (e) e.stopPropagation();
+  const numericId = Number(id);
+  let ids = getFavoriteIds();
+  ids = ids.includes(numericId) ? ids.filter(x => x !== numericId) : [numericId, ...ids];
+  saveIdList(FAVORITES_KEY, ids);
+  updatePersonalCounts();
+  renderCards();
+}
+
+function rememberRecent(id) {
+  const numericId = Number(id);
+  const ids = [numericId, ...loadIdList(RECENT_KEY).filter(x => x !== numericId)].slice(0, RECENT_LIMIT);
+  saveIdList(RECENT_KEY, ids);
+  updatePersonalCounts();
+}
+
+function updatePersonalCounts() {
+  const fav = document.getElementById('count-favorites');
+  const recent = document.getElementById('count-recent');
+  if (fav) fav.textContent = getFavoriteIds().length;
+  if (recent) recent.textContent = loadIdList(RECENT_KEY).length;
+}
+
+
 /* ── Case prompt cache ───────────────────────────────────────────────────── */
 window.__caseCache = [];
 let __modalCaseCache = [];
@@ -139,16 +185,37 @@ function renderCards() {
   const grid = document.getElementById('cardGrid');
   const q    = searchQuery.toLowerCase();
 
-  const filtered = PROMPTS.filter(p => {
-    const matchCat = currentCat === 'all' || p.cat === currentCat;
-    const matchQ   = !q || p.title.toLowerCase().includes(q) || p.content.toLowerCase().includes(q) || String(p.scene || '').toLowerCase().includes(q) || String(catInfo(p.cat).label || '').toLowerCase().includes(q);
+  const favoriteIds = getFavoriteIds();
+  const recentIds = loadIdList(RECENT_KEY);
+
+  let filtered = PROMPTS.filter(p => {
+    let matchCat = currentCat === 'all' || p.cat === currentCat;
+    if (currentCat === 'favorites') matchCat = favoriteIds.includes(Number(p.id));
+    if (currentCat === 'recent') matchCat = recentIds.includes(Number(p.id));
+
+    const matchQ = !q ||
+      p.title.toLowerCase().includes(q) ||
+      p.content.toLowerCase().includes(q) ||
+      String(p.scene || '').toLowerCase().includes(q) ||
+      String(p.desc || '').toLowerCase().includes(q) ||
+      String(catInfo(p.cat).label || '').toLowerCase().includes(q);
+
     return matchCat && matchQ;
   });
+
+  if (currentCat === 'recent') {
+    filtered.sort((a, b) => recentIds.indexOf(Number(a.id)) - recentIds.indexOf(Number(b.id)));
+  }
 
   document.getElementById('count-all').textContent = PROMPTS.length;
 
   if (!filtered.length) {
-    grid.innerHTML = `<div class="no-results"><span>◎</span><p>找不到符合「${searchQuery}」的提示詞</p></div>`;
+    const message = currentCat === 'favorites'
+      ? '尚未收藏提示詞'
+      : currentCat === 'recent'
+        ? '尚無最近瀏覽紀錄'
+        : `找不到符合「${searchQuery}」的提示詞`;
+    grid.innerHTML = `<div class="no-results"><span>◎</span><p>${message}</p></div>`;
     return;
   }
 
@@ -210,7 +277,15 @@ function renderCards() {
       <div class="card ${cat.class}" style="animation-delay:${Math.min(i*.04,.4)}s" data-id="${p.id}">
         <div class="card-top" onclick="openModal(${p.id})" style="cursor:pointer;">
           <span class="card-cat">${cat.icon} ${cat.label}</span>
-          <span class="card-arrow">↗</span>
+          <div class="card-top-actions">
+            <button class="favorite-btn ${isFavorite(p.id) ? 'is-favorite' : ''}"
+              onclick="toggleFavorite(event, ${p.id})"
+              aria-label="${isFavorite(p.id) ? '取消收藏' : '加入收藏'}"
+              title="${isFavorite(p.id) ? '取消收藏' : '加入收藏'}">
+              ${isFavorite(p.id) ? '★' : '☆'}
+            </button>
+            <span class="card-arrow">↗</span>
+          </div>
         </div>
         <div class="card-title"  onclick="openModal(${p.id})" style="cursor:pointer;">${escapeHtml(p.title)}</div>
         ${p.desc ? `<div class="card-scene"><span class="card-scene-icon">💡</span><span class="card-scene-text">${escapeHtml(p.desc)}</span></div>` : ''}
@@ -431,4 +506,5 @@ document.getElementById('searchInput').addEventListener('input', e => {
 });
 
 /* ── Init ───────────────────────────────────────────────────────────────── */
+updatePersonalCounts();
 renderCards();
