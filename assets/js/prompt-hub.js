@@ -228,13 +228,12 @@ function renderCards() {
 
     const footer = `
       <div class="card-footer">
-        <span class="card-chars">${p.content.length.toLocaleString()} 字元</span>
-        <div class="card-footer-actions">
+<div class="card-footer-actions">
           ${badge}
           <button class="card-preview-btn"
             onclick="event.stopPropagation();openModal(${p.id})"
-            title="預覽完整提示詞">
-            👁 預覽
+            title="查看完整提示詞">
+            👁 查看
           </button>
           <button class="card-copy-prompt-btn"
             onclick="cardCopyPromptById(event,this,${p.id})"
@@ -284,8 +283,7 @@ function renderCards() {
               title="${isFavorite(p.id) ? '取消收藏' : '加入收藏'}">
               ${isFavorite(p.id) ? '★' : '☆'}
             </button>
-            <span class="card-arrow">↗</span>
-          </div>
+</div>
         </div>
         <div class="card-title"  onclick="openModal(${p.id})" style="cursor:pointer;">${escapeHtml(p.title)}</div>
         ${p.desc ? `<div class="card-scene"><span class="card-scene-icon">💡</span><span class="card-scene-text">${escapeHtml(p.desc)}</span></div>` : ''}
