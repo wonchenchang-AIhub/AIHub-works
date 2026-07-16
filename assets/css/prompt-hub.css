@@ -1342,3 +1342,62 @@ body {
     left: 92px !important;
   }
 }
+
+
+/* =========================================================
+   AIHub Works Prompt Hub v1.6
+   收藏與最近瀏覽
+   ========================================================= */
+
+.special-filter {
+  border-color: rgba(246,198,63,.34) !important;
+}
+
+.card-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.favorite-btn {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(23,32,51,.12);
+  border-radius: 999px;
+  background: rgba(255,255,255,.82);
+  color: #7b8492;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform .15s ease, color .15s ease, background .15s ease, border-color .15s ease;
+}
+
+.favorite-btn:hover {
+  transform: translateY(-1px) scale(1.04);
+  color: #e0a800;
+  border-color: rgba(224,168,0,.36);
+}
+
+.favorite-btn:active {
+  transform: scale(.94);
+}
+
+.favorite-btn.is-favorite {
+  color: #d89a00;
+  background: #fff7d6;
+  border-color: rgba(216,154,0,.34);
+}
+
+@media (max-width: 640px) {
+  .favorite-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 19px;
+  }
+
+  .card-top-actions {
+    gap: 6px;
+  }
+}
