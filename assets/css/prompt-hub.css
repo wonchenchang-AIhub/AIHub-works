@@ -1401,3 +1401,97 @@ body {
     gap: 6px;
   }
 }
+
+
+/* =========================================================
+   AIHub Works Prompt Hub v1.7
+   卡片資訊精簡
+   ========================================================= */
+
+/* 移除重複入口後，頂端收藏靠右 */
+.card-top {
+  justify-content: space-between !important;
+}
+
+.card-top-actions {
+  margin-left: auto !important;
+}
+
+/* 防止舊箭頭殘留 */
+.card-arrow {
+  display: none !important;
+}
+
+/* 字元統計不再顯示 */
+.card-chars {
+  display: none !important;
+}
+
+/* Footer 改為單純的操作區 */
+.card-footer {
+  display: block !important;
+}
+
+.card-footer-actions {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+}
+
+.card-preview-btn,
+.card-copy-prompt-btn {
+  width: 100% !important;
+  min-width: 0 !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+}
+
+/* 收藏按鈕再簡化 */
+.favorite-btn {
+  width: 30px !important;
+  height: 30px !important;
+  font-size: 18px !important;
+  box-shadow: none !important;
+}
+
+/* 卡片高度略縮 */
+.card-header {
+  padding-bottom: 6px !important;
+}
+
+.card-preview {
+  padding-bottom: 10px !important;
+}
+
+.card-footer {
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+
+/* 實戰案例列更俐落 */
+.case-toggle {
+  min-height: 38px !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+
+@media (max-width: 640px) {
+  .card-footer-actions {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .card-preview-btn,
+  .card-copy-prompt-btn {
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 8px !important;
+    font-size: 14px !important;
+  }
+
+  .favorite-btn {
+    width: 30px !important;
+    height: 30px !important;
+  }
+}
