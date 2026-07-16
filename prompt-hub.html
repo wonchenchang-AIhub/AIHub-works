@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="AIHub Works Prompt Hub｜151 組實用提示詞與 454 則實戰案例。">
+<title>Prompt Hub｜AIHub Works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600&family=Noto+Sans+TC:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/prompt-hub.css">
+</head>
+<body>
+<div class="bg-grid"></div><div class="bg-glow"></div>
+
+<header class="site-header">
+  <div class="topbar"><a href="index.html" class="home-link">← AIHub Works</a><span>Prompt Hub</span></div>
+  <div class="hero-block">
+    <p class="hero-eyebrow">PROMPT HUB · AIHub Works</p>
+    <div class="hero-body">
+      <div class="hero-left">
+        <h1 class="hero-title">AI 提示詞分享與應用學習平台</h1>
+        <p class="hero-tagline">151 組提示詞 × 454 則實戰案例</p>
+      </div>
+      <div class="hero-right">
+        <p class="hero-quote-above">「AI 給你什麼，取決於你怎麼問它。」</p>
+        <div class="search-wrap">
+          <input type="search" id="searchInput" class="search-input" placeholder="搜尋提示詞名稱、說明或內容…" aria-label="搜尋提示詞">
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="cat-nav-wrap">
+  <button class="cat-scroll-btn left" id="catScrollLeft" aria-label="向左捲動" disabled>‹</button>
+  <nav class="cat-nav" id="catNav" aria-label="提示詞分類">
+    <button class="cat-btn active" data-cat="all"><span class="cat-icon">◉</span> 全部 <span class="cat-count" id="count-all">151</span></button>
+<button class="cat-btn" data-cat="preset"><span class="cat-icon">⚙️</span> AI工具設定 <span class="cat-count">2</span></button>
+<button class="cat-btn" data-cat="decision"><span class="cat-icon">📊</span> 決策與分析 <span class="cat-count">8</span></button>
+<button class="cat-btn" data-cat="proposal"><span class="cat-icon">📋</span> 企劃與提案 <span class="cat-count">15</span></button>
+<button class="cat-btn" data-cat="project"><span class="cat-icon">🗂️</span> 計畫書與報告 <span class="cat-count">19</span></button>
+<button class="cat-btn" data-cat="creative"><span class="cat-icon">🎨</span> 簡報與視覺 <span class="cat-count">14</span></button>
+<button class="cat-btn" data-cat="patent"><span class="cat-icon">⚖️</span> 專利分析 <span class="cat-count">5</span></button>
+<button class="cat-btn" data-cat="writing"><span class="cat-icon">✍️</span> 文稿優化 <span class="cat-count">8</span></button>
+<button class="cat-btn" data-cat="ai_roles"><span class="cat-icon">🧠</span> 策略智囊 <span class="cat-count">12</span></button>
+<button class="cat-btn" data-cat="comms"><span class="cat-icon">💼</span> 職場溝通 <span class="cat-count">5</span></button>
+<button class="cat-btn" data-cat="industry"><span class="cat-icon">📈</span> 產業分析 <span class="cat-count">11</span></button>
+<button class="cat-btn" data-cat="research"><span class="cat-icon">🔬</span> 研究分析 <span class="cat-count">21</span></button>
+<button class="cat-btn" data-cat="sales"><span class="cat-icon">💰</span> 行銷銷售 <span class="cat-count">9</span></button>
+<button class="cat-btn" data-cat="routine"><span class="cat-icon">📅</span> 日常效率 <span class="cat-count">7</span></button>
+<button class="cat-btn" data-cat="learning"><span class="cat-icon">🎓</span> 學習成長 <span class="cat-count">11</span></button>
+<button class="cat-btn" data-cat="life"><span class="cat-icon">✨</span> 生活娛樂 <span class="cat-count">4</span></button>
+  </nav>
+  <button class="cat-scroll-btn right" id="catScrollRight" aria-label="向右捲動">›</button>
+</div>
+
+<main class="main-grid" id="cardGrid"></main>
+
+<div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-meta"><span class="modal-cat-tag" id="modalCat"></span><h2 class="modal-title" id="modalTitle"></h2></div>
+      <button class="modal-close" id="modalClose" aria-label="關閉">✕</button>
+    </div>
+    <div class="modal-scroll" id="modalScroll">
+      <div class="modal-body"><div class="modal-scene" id="modalScene" style="display:none;"></div><pre class="modal-content" id="modalContent"></pre></div>
+      <div class="modal-cases" id="modalCases" style="display:none;"><div class="modal-cases-title">📋 實戰案例 · 點擊複製可直接使用</div><div id="modalCasesList"></div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="copy-btn" id="copyBtn"><span class="copy-icon">⎘</span> 複製提示詞</button>
+      <span class="copy-confirm" id="copyConfirm"></span><span class="modal-copy-count" id="modalCopyCount"></span>
+    </div>
+  </div>
+</div>
+
+<script src="assets/data/prompt-data.js"></script>
+<script src="assets/data/case-data.js"></script>
+<script src="assets/js/prompt-hub.js"></script>
+</body>
+</html>

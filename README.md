@@ -1,14 +1,19 @@
-# AIHub Works
+# AIHub Works Prompt Hub v1
 
-AIHub Works 是分享 AI 應用、提示詞、教學與實戰案例的個人網站。
+第一版整合內容：
 
-## 基礎架構
+- 單一 Responsive Prompt Hub
+- 151 組提示詞
+- 454 則實戰案例
+- 搜尋、分類、預覽、一鍵複製
+- 桌機／平板／手機版共用一套程式
+- 首頁「探索提示詞」已連結至 `prompt-hub.html`
 
-- `index.html`：網站首頁
-- `assets/css/style.css`：Responsive 樣式
-- `assets/js/app.js`：基礎互動
-- `assets/data/prompts.json`：提示詞資料
+## 上傳方式
 
-## 部署
+將本資料夾全部內容上傳至 GitHub Repository 根目錄，覆蓋既有 `index.html`、`assets/css/style.css` 與 `assets/js/app.js`。
 
-使用 GitHub Pages，來源設定為 `main` 分支與 `/ (root)`。
+## 測試網址
+
+- 首頁：`/AIHub-works/`
+- Prompt Hub：`/AIHub-works/prompt-hub.html`
