@@ -80,8 +80,12 @@
       <button class="modal-close" id="modalClose" aria-label="關閉">✕</button>
     </div>
     <div class="modal-scroll" id="modalScroll">
-      <div class="modal-body"><div class="modal-scene" id="modalScene" style="display:none;"></div><pre class="modal-content" id="modalContent"></pre></div>
-      <div class="modal-cases" id="modalCases" style="display:none;"><div class="modal-cases-title">📋 實戰案例 · 點擊複製可直接使用</div><div id="modalCasesList"></div></div>
+      <div class="modal-body">
+        <div class="modal-scene" id="modalScene" style="display:none;"></div>
+        <div class="modal-section-heading">提示詞內容</div>
+        <pre class="modal-content" id="modalContent"></pre>
+      </div>
+      <div class="modal-cases" id="modalCases" style="display:none;"><div class="modal-cases-title"><span>實戰案例</span><small>點擊「複製案例」即可直接使用</small></div><div id="modalCasesList"></div></div>
       <section class="modal-related" id="modalRelated" style="display:none;">
         <div class="modal-related-title">你可能也需要</div>
         <div class="modal-related-list" id="modalRelatedList"></div>
@@ -94,8 +98,14 @@
         <button type="button" class="modal-nav-btn" id="modalNextBtn">下一篇 →</button>
       </div>
       <div class="modal-footer">
-      <button class="copy-btn" id="copyBtn"><span class="copy-icon">⎘</span> 複製提示詞</button>
-      <span class="copy-confirm" id="copyConfirm"></span><span class="modal-copy-count" id="modalCopyCount"></span>
+      <div class="modal-footer-status">
+        <span class="copy-confirm" id="copyConfirm"></span>
+        <span class="modal-copy-count" id="modalCopyCount"></span>
+      </div>
+      <div class="modal-footer-actions">
+        <button class="modal-secondary-btn" id="modalFooterClose" type="button">關閉</button>
+        <button class="copy-btn" id="copyBtn" type="button"><span class="copy-icon">⎘</span> 複製提示詞</button>
+      </div>
     </div>
   </div>
 </div>
