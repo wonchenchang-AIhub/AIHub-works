@@ -24,6 +24,7 @@ function logCopyToGoogleForm(prompt) {
 
 let currentCat = 'all';
 let searchQuery = '';
+let currentSort = 'default';
 
 
 /* ── Toast ──────────────────────────────────────────────────────────────── */
@@ -95,6 +96,7 @@ function updatePersonalCounts() {
   const recent = document.getElementById('count-recent');
   if (fav) fav.textContent = getFavoriteIds().length;
   if (recent) recent.textContent = loadIdList(RECENT_KEY).length;
+  updateDashboard();
 }
 
 
@@ -169,6 +171,100 @@ window.addEventListener('DOMContentLoaded', function() {
 
 function fmt(n) { return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n); }
 
+function getReadingSeconds(prompt) {
+  const length = String(prompt.content || '').replace(/\s+/g, '').length;
+  return Math.max(20, Math.ceil(length / 8));
+}
+
+function formatReadingTime(prompt) {
+  const seconds = getReadingSeconds(prompt);
+  if (seconds < 60) return `約 ${seconds} 秒`;
+  return `約 ${Math.ceil(seconds / 60)} 分鐘`;
+}
+
+function getTotalCopies() {
+  return PROMPTS.reduce((sum, prompt) => sum + getCount(prompt.id), 0);
+}
+
+function getDailyPrompt() {
+  if (!PROMPTS.length) return null;
+  const now = new Date();
+  const dayKey = Number(
+    `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
+  );
+  return PROMPTS[dayKey % PROMPTS.length];
+}
+
+function updateDashboard() {
+  const totalCases = PROMPTS.reduce((sum, prompt) => sum + getCases(prompt.id).length, 0);
+  const values = {
+    kpiPrompts: PROMPTS.length,
+    kpiCases: totalCases,
+    kpiCopies: getTotalCopies(),
+    kpiFavorites: getFavoriteIds().length
+  };
+
+  Object.entries(values).forEach(([id, value]) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = fmt(value);
+  });
+}
+
+function getRelatedPrompts(prompt, limit = 4) {
+  const sourceText = `${prompt.title || ''} ${prompt.scene || ''} ${prompt.desc || ''} ${prompt.content || ''}`.toLowerCase();
+  const sourceWords = new Set(
+    sourceText
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .split(/\s+/)
+      .filter(word => word.length >= 2)
+  );
+
+  return PROMPTS
+    .filter(item => Number(item.id) !== Number(prompt.id))
+    .map(item => {
+      let score = item.cat === prompt.cat ? 12 : 0;
+      const candidateText = `${item.title || ''} ${item.scene || ''} ${item.desc || ''}`.toLowerCase();
+      sourceWords.forEach(word => {
+        if (candidateText.includes(word)) score += 1;
+      });
+      return { item, score };
+    })
+    .filter(entry => entry.score > 0)
+    .sort((a, b) => b.score - a.score || getCount(b.item.id) - getCount(a.item.id))
+    .slice(0, limit)
+    .map(entry => entry.item);
+}
+
+function applySort(items) {
+  const favoriteIds = getFavoriteIds();
+
+  if (currentSort === 'popular') {
+    return [...items].sort((a, b) => getCount(b.id) - getCount(a.id));
+  }
+
+  if (currentSort === 'favorites') {
+    return [...items].sort((a, b) => {
+      const favDiff = Number(favoriteIds.includes(Number(b.id))) - Number(favoriteIds.includes(Number(a.id)));
+      return favDiff || getCount(b.id) - getCount(a.id);
+    });
+  }
+
+  if (currentSort === 'title') {
+    return [...items].sort((a, b) => String(a.title).localeCompare(String(b.title), 'zh-Hant'));
+  }
+
+  if (currentSort === 'short') {
+    return [...items].sort((a, b) => getReadingSeconds(a) - getReadingSeconds(b));
+  }
+
+  if (currentSort === 'long') {
+    return [...items].sort((a, b) => getReadingSeconds(b) - getReadingSeconds(a));
+  }
+
+  return items;
+}
+
+
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 function catInfo(key) {
   return CATEGORIES[key] || { label: key, icon: '◉', class: '' };
@@ -241,6 +337,8 @@ function renderCards() {
     filtered = filtered.slice(0, 20);
   }
 
+  filtered = applySort(filtered);
+
   if (!filtered.length) {
     const message = currentCat === 'favorites'
       ? '尚未收藏提示詞'
@@ -294,6 +392,7 @@ function renderCards() {
 
         <footer class="prompt-card__footer">
           <div class="prompt-card__meta">
+            <span class="prompt-card__reading">◷ ${formatReadingTime(p)}</span>
             <span class="prompt-card__copies" title="複製次數">⎘ ${copies}</span>
           </div>
 
@@ -375,6 +474,7 @@ function copyPrompt(event, id) {
   const card = button ? button.closest('.prompt-card') : null;
   const counter = card ? card.querySelector('.prompt-card__copies') : null;
   if (counter) counter.textContent = `⎘ ${newCount}`;
+  updateDashboard();
   showToast('✓ 已複製提示詞');
 }
 
@@ -594,8 +694,43 @@ document.getElementById('searchInput').addEventListener('input', e => {
   renderCards();
 });
 
+
+/* ── Product controls ───────────────────────────────────────────────────── */
+const sortSelect = document.getElementById('sortSelect');
+if (sortSelect) {
+  sortSelect.addEventListener('change', event => {
+    currentSort = event.target.value;
+    renderCards();
+  });
+}
+
+const dailyPickBtn = document.getElementById('dailyPickBtn');
+if (dailyPickBtn) {
+  const dailyPrompt = getDailyPrompt();
+  if (dailyPrompt) {
+    dailyPickBtn.title = dailyPrompt.title;
+    dailyPickBtn.addEventListener('click', () => openModal(dailyPrompt.id));
+  }
+}
+
+document.addEventListener('keydown', event => {
+  const activeTag = document.activeElement ? document.activeElement.tagName : '';
+  const typing = activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT';
+
+  if (event.key === '/' && !typing) {
+    event.preventDefault();
+    const input = document.getElementById('searchInput');
+    if (input) input.focus();
+  }
+
+  if (event.key === 'Escape') {
+    closeModal();
+  }
+});
+
 /* ── Init ───────────────────────────────────────────────────────────────── */
 updatePersonalCounts();
+updateDashboard();
 const popularCount = document.getElementById('count-popular');
 if (popularCount) popularCount.textContent = Math.min(20, PROMPTS.length);
 renderCards();
