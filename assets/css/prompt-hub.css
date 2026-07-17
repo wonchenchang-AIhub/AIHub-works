@@ -2151,3 +2151,116 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* AIHub Works Prompt Hub v2.3 — Style A + B */
+:root{
+  --ab-bg:#F7FAFC;--ab-bg-warm:#FFFDF8;--ab-card:#FFFFFF;
+  --ab-primary:#4F46E5;--ab-secondary:#7C3AED;--ab-accent:#06B6D4;
+  --ab-success:#22C55E;--ab-warning:#F59E0B;--ab-danger:#EF4444;
+  --ab-blue:#4F7DF3;--ab-coral:#FF8A5B;--ab-mint:#31C48D;
+  --ab-highlight:#FFD54A;--ab-text:#1F2937;--ab-muted:#64748B;
+  --ab-shadow:0 12px 32px rgba(15,23,42,.08);
+}
+body{
+  background:
+    radial-gradient(circle at 8% 0%,rgba(79,70,229,.055),transparent 26%),
+    radial-gradient(circle at 92% 12%,rgba(255,138,91,.05),transparent 24%),
+    linear-gradient(180deg,var(--ab-bg) 0%,var(--ab-bg-warm) 100%)!important;
+  color:var(--ab-text)!important;
+}
+.bg-grid{opacity:.35!important}
+.site-header{
+  background:linear-gradient(135deg,#111827 0%,#172033 58%,#21163f 100%)!important;
+  border-bottom:1px solid rgba(255,255,255,.06)
+}
+.hero-tagline{color:var(--ab-highlight)!important}
+.search-input{
+  border-color:rgba(6,182,212,.38)!important;
+  background:rgba(255,255,255,.07)!important
+}
+.search-input:focus{
+  border-color:var(--ab-accent)!important;
+  box-shadow:0 0 0 4px rgba(6,182,212,.12)!important
+}
+.cat-nav-wrap{
+  background:rgba(17,24,39,.96)!important;
+  backdrop-filter:blur(16px)
+}
+.cat-btn{
+  border:1px solid transparent!important;
+  border-radius:999px!important;
+  transition:background .18s ease,border-color .18s ease,color .18s ease,transform .18s ease!important
+}
+.cat-btn:hover{
+  transform:translateY(-1px);
+  border-color:rgba(255,255,255,.12)!important;
+  background:rgba(255,255,255,.06)!important
+}
+.cat-btn.active{
+  color:#fff!important;
+  background:linear-gradient(135deg,var(--ab-primary),var(--ab-secondary))!important;
+  border-color:transparent!important;
+  box-shadow:0 8px 20px rgba(79,70,229,.28)
+}
+.cat-count{background:rgba(255,255,255,.13)!important;color:inherit!important}
+.main-grid{padding-top:22px!important}
+.prompt-card{
+  background:rgba(255,255,255,.88)!important;
+  border:1px solid rgba(255,255,255,.85)!important;
+  backdrop-filter:blur(14px);
+  box-shadow:var(--ab-shadow)!important
+}
+.prompt-card:hover{
+  transform:translateY(-5px)!important;
+  box-shadow:0 20px 46px rgba(15,23,42,.12)!important
+}
+.prompt-card__category{color:var(--ab-muted)!important;margin-left:6px}
+.prompt-card__title{color:var(--ab-text)!important}
+.prompt-card__summary{color:var(--ab-muted)!important}
+.prompt-card__header::before{
+  content:"";width:4px;height:22px;border-radius:999px;
+  background:linear-gradient(180deg,var(--ab-primary),var(--ab-accent));
+  flex:0 0 4px
+}
+.prompt-card .favorite-btn.is-favorite{color:var(--ab-warning)!important}
+.prompt-card .share-btn:hover{
+  color:var(--ab-primary)!important;background:rgba(79,70,229,.08)!important
+}
+.prompt-card .card-preview-btn{
+  color:var(--ab-primary)!important;background:#fff!important;
+  border-color:rgba(79,70,229,.22)!important
+}
+.prompt-card .card-preview-btn:hover{
+  background:rgba(79,70,229,.055)!important;
+  border-color:rgba(79,70,229,.42)!important
+}
+.prompt-card .card-copy-prompt-btn{
+  color:#fff!important;
+  background:linear-gradient(135deg,var(--ab-primary),var(--ab-secondary))!important;
+  border-color:transparent!important;
+  box-shadow:0 8px 18px rgba(79,70,229,.20)
+}
+.prompt-card .card-copy-prompt-btn:hover{filter:brightness(1.04);transform:translateY(-1px)}
+.prompt-card .case-toggle{
+  color:#334155!important;
+  background:linear-gradient(90deg,rgba(79,70,229,.035),rgba(49,196,141,.035))!important
+}
+.prompt-card .case-toggle:hover{
+  background:linear-gradient(90deg,rgba(79,70,229,.07),rgba(49,196,141,.07))!important
+}
+.modal{
+  background:rgba(255,255,255,.96)!important;
+  backdrop-filter:blur(18px);
+  border:1px solid rgba(255,255,255,.84)!important;
+  box-shadow:0 28px 80px rgba(15,23,42,.22)!important
+}
+.modal-cat-tag{border-radius:999px!important}
+.aihub-toast{
+  background:rgba(31,41,55,.96)!important;
+  border:1px solid rgba(255,255,255,.10)!important
+}
+@media(max-width:640px){
+  .main-grid{padding-top:14px!important}
+  .prompt-card{border-radius:18px!important}
+  .prompt-card:hover{transform:none!important}
+}
