@@ -25,6 +25,27 @@ function logCopyToGoogleForm(prompt) {
 let currentCat = 'all';
 let searchQuery = '';
 
+
+/* ── Toast ──────────────────────────────────────────────────────────────── */
+let toastTimer = null;
+
+function showToast(message) {
+  let toast = document.getElementById('aihubToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'aihubToast';
+    toast.className = 'aihub-toast';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+    document.body.appendChild(toast);
+  }
+
+  toast.textContent = message;
+  toast.classList.add('is-visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('is-visible'), 1800);
+}
+
 /* ── Favorites & recently viewed ───────────────────────────────────────── */
 const FAVORITES_KEY = 'aihub_favorite_prompt_ids';
 const RECENT_KEY = 'aihub_recent_prompt_ids';
@@ -50,10 +71,16 @@ function toggleFavorite(e, id) {
   if (e) e.stopPropagation();
   const numericId = Number(id);
   let ids = getFavoriteIds();
-  ids = ids.includes(numericId) ? ids.filter(x => x !== numericId) : [numericId, ...ids];
+  const removing = ids.includes(numericId);
+
+  ids = removing
+    ? ids.filter(x => x !== numericId)
+    : [numericId, ...ids];
+
   saveIdList(FAVORITES_KEY, ids);
   updatePersonalCounts();
   renderCards();
+  showToast(removing ? '已取消收藏' : '★ 已加入收藏');
 }
 
 function rememberRecent(id) {
@@ -190,6 +217,7 @@ function renderCards() {
     let matchCat = currentCat === 'all' || p.cat === currentCat;
     if (currentCat === 'favorites') matchCat = favoriteIds.includes(Number(p.id));
     if (currentCat === 'recent') matchCat = recentIds.includes(Number(p.id));
+    if (currentCat === 'popular') matchCat = true;
 
     const categoryLabel = String(catInfo(p.cat).label || '').toLowerCase();
     const matchQ = !q ||
@@ -208,12 +236,19 @@ function renderCards() {
     );
   }
 
+  if (currentCat === 'popular') {
+    filtered.sort((a, b) => getCount(b.id) - getCount(a.id));
+    filtered = filtered.slice(0, 20);
+  }
+
   if (!filtered.length) {
     const message = currentCat === 'favorites'
       ? '尚未收藏提示詞'
       : currentCat === 'recent'
         ? '尚無最近瀏覽紀錄'
-        : `找不到符合「${searchQuery}」的提示詞`;
+        : currentCat === 'popular'
+          ? '尚無熱門提示詞資料'
+          : `找不到符合「${searchQuery}」的提示詞`;
 
     grid.innerHTML = `
       <div class="no-results">
@@ -240,6 +275,14 @@ function renderCards() {
             aria-label="${favorite ? '取消收藏' : '加入收藏'}"
             title="${favorite ? '取消收藏' : '加入收藏'}">
             ${favorite ? '★' : '☆'}
+          </button>
+          <button
+            class="share-btn"
+            type="button"
+            onclick="sharePrompt(event, ${p.id})"
+            aria-label="分享提示詞"
+            title="分享提示詞">
+            ↗
           </button>
         </header>
 
@@ -287,6 +330,38 @@ function renderCards() {
 }
 
 
+async function sharePrompt(event, id) {
+  if (event) event.stopPropagation();
+  const prompt = PROMPTS.find(item => Number(item.id) === Number(id));
+  if (!prompt) return;
+
+  const url = new URL(window.location.href);
+  url.searchParams.set('prompt', String(id));
+  const shareData = {
+    title: `${prompt.title}｜AIHub Works`,
+    text: prompt.title,
+    url: url.toString()
+  };
+
+  try {
+    if (navigator.share) {
+      await navigator.share(shareData);
+      showToast('已開啟分享選單');
+    } else {
+      await navigator.clipboard.writeText(shareData.url);
+      showToast('✓ 分享連結已複製');
+    }
+  } catch (error) {
+    if (error && error.name === 'AbortError') return;
+    try {
+      await navigator.clipboard.writeText(shareData.url);
+      showToast('✓ 分享連結已複製');
+    } catch (copyError) {
+      showToast('分享失敗，請稍後再試');
+    }
+  }
+}
+
 function copyPrompt(event, id) {
   if (event) event.stopPropagation();
   const prompt = PROMPTS.find(item => Number(item.id) === Number(id));
@@ -300,6 +375,7 @@ function copyPrompt(event, id) {
   const card = button ? button.closest('.prompt-card') : null;
   const counter = card ? card.querySelector('.prompt-card__copies') : null;
   if (counter) counter.textContent = `⎘ ${newCount}`;
+  showToast('✓ 已複製提示詞');
 }
 
 function toggleCases(event, id) {
@@ -339,11 +415,13 @@ function toggleCases(event, id) {
       clickEvent.stopPropagation();
       const item = cases[index];
       doCaseCopy(item.prompt || item.content || '', caseButton);
+      showToast('✓ 已複製實戰案例');
     });
   });
 }
 
 function openModal(id) {
+  rememberRecent(id);
   __modalCaseCache = [];
   const p = PROMPTS.find(x => x.id === id);
   if (!p) return;
@@ -518,4 +596,11 @@ document.getElementById('searchInput').addEventListener('input', e => {
 
 /* ── Init ───────────────────────────────────────────────────────────────── */
 updatePersonalCounts();
+const popularCount = document.getElementById('count-popular');
+if (popularCount) popularCount.textContent = Math.min(20, PROMPTS.length);
 renderCards();
+
+const deepLinkedPromptId = Number(new URLSearchParams(window.location.search).get('prompt'));
+if (Number.isFinite(deepLinkedPromptId) && PROMPTS.some(p => Number(p.id) === deepLinkedPromptId)) {
+  setTimeout(() => openModal(deepLinkedPromptId), 120);
+}
