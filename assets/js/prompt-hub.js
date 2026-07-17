@@ -225,8 +225,8 @@ function renderCards() {
 
   grid.innerHTML = filtered.map(p => {
     const cat = catInfo(p.cat);
-    const cases = getCasesForPrompt(p.id);
-    const copies = getCopyCount(p.id);
+    const cases = getCases(p.id);
+    const copies = getCount(p.id);
     const favorite = isFavorite(p.id);
 
     return `
@@ -284,6 +284,63 @@ function renderCards() {
       </article>
     `;
   }).join('');
+}
+
+
+function copyPrompt(event, id) {
+  if (event) event.stopPropagation();
+  const prompt = PROMPTS.find(item => Number(item.id) === Number(id));
+  if (!prompt) return;
+
+  const button = event && event.currentTarget ? event.currentTarget : null;
+  doPromptCopy(prompt.content, button || document.createElement('button'));
+  logCopyToGoogleForm(prompt);
+
+  const newCount = incrementCount(id);
+  const card = button ? button.closest('.prompt-card') : null;
+  const counter = card ? card.querySelector('.prompt-card__copies') : null;
+  if (counter) counter.textContent = `⎘ ${newCount}`;
+}
+
+function toggleCases(event, id) {
+  if (event) event.stopPropagation();
+
+  const button = event.currentTarget;
+  const list = document.getElementById(`cases-${id}`);
+  const cases = getCases(id);
+  if (!button || !list || !cases.length) return;
+
+  const isOpen = button.getAttribute('aria-expanded') === 'true';
+
+  if (isOpen) {
+    button.setAttribute('aria-expanded', 'false');
+    button.innerHTML = `<span class="case-toggle__icon">▶</span><span>📋 實戰案例（${cases.length}）</span>`;
+    list.innerHTML = '';
+    return;
+  }
+
+  button.setAttribute('aria-expanded', 'true');
+  button.innerHTML = `<span class="case-toggle__icon">▼</span><span>📋 實戰案例（${cases.length}）</span>`;
+
+  list.innerHTML = cases.map((item, index) => `
+    <div class="case-item">
+      <div class="case-item__header">
+        <strong>${escapeHtml(item.title || `案例 ${index + 1}`)}</strong>
+      </div>
+      ${item.scene ? `<p>${escapeHtml(item.scene)}</p>` : ''}
+      <button type="button" class="case-copy-btn" data-case-index="${index}">
+        ⎘ 複製案例
+      </button>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.case-copy-btn').forEach((caseButton, index) => {
+    caseButton.addEventListener('click', (clickEvent) => {
+      clickEvent.stopPropagation();
+      const item = cases[index];
+      doCaseCopy(item.prompt || item.content || '', caseButton);
+    });
+  });
 }
 
 function openModal(id) {
