@@ -373,8 +373,9 @@ function renderCards() {
 
         <footer class="prompt-card__footer">
           <div class="prompt-card__meta">
-            <span class="prompt-card__reading">◷ ${formatReadingTime(p)}</span>
-            <span class="prompt-card__copies" title="複製次數">⎘ ${copies}</span>
+            <span class="prompt-card__reading">閱讀 ${formatReadingTime(p)}</span>
+            ${cases.length ? `<span class="prompt-card__cases">${cases.length} 個案例</span>` : ''}
+            <span class="prompt-card__copies" title="複製次數">複製 ${copies}</span>
           </div>
 
           <div class="prompt-card__actions">
@@ -752,6 +753,11 @@ if (searchClearBtn) {
     }
     renderCards();
   });
+}
+
+const modalFooterClose = document.getElementById('modalFooterClose');
+if (modalFooterClose) {
+  modalFooterClose.addEventListener('click', closeModal);
 }
 
 const backToTop = document.getElementById('backToTop');
