@@ -67,7 +67,35 @@
   <button class="cat-scroll-btn right" id="catScrollRight" aria-label="向右捲動">›</button>
 </div>
 
+
+<section class="hub-dashboard" aria-label="Prompt Hub 資訊與排序">
+  <div class="hub-kpis">
+    <div class="hub-kpi"><strong id="kpiPrompts">151</strong><span>提示詞</span></div>
+    <div class="hub-kpi"><strong id="kpiCases">454</strong><span>實戰案例</span></div>
+    <div class="hub-kpi"><strong id="kpiCopies">0</strong><span>本機複製</span></div>
+    <div class="hub-kpi"><strong id="kpiFavorites">0</strong><span>我的收藏</span></div>
+  </div>
+
+  <div class="hub-controls">
+    <button type="button" class="daily-pick-btn" id="dailyPickBtn">
+      ✦ 今日推薦
+    </button>
+    <label class="sort-control">
+      <span>排序</span>
+      <select id="sortSelect" aria-label="提示詞排序">
+        <option value="default">預設順序</option>
+        <option value="popular">熱門優先</option>
+        <option value="favorites">收藏優先</option>
+        <option value="title">名稱 A→Z</option>
+        <option value="short">閱讀時間短→長</option>
+        <option value="long">閱讀時間長→短</option>
+      </select>
+    </label>
+  </div>
+</section>
+
 <main class="main-grid" id="cardGrid"></main>
+
 
 <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal" id="modal">
@@ -78,6 +106,11 @@
     <div class="modal-scroll" id="modalScroll">
       <div class="modal-body"><div class="modal-scene" id="modalScene" style="display:none;"></div><pre class="modal-content" id="modalContent"></pre></div>
       <div class="modal-cases" id="modalCases" style="display:none;"><div class="modal-cases-title">📋 實戰案例 · 點擊複製可直接使用</div><div id="modalCasesList"></div></div>
+      <section class="modal-related" id="modalRelated" style="display:none;">
+        <div class="modal-related-title">你可能也需要</div>
+        <div class="modal-related-list" id="modalRelatedList"></div>
+      </section>
+
     </div>
     <div class="modal-footer">
       <button class="copy-btn" id="copyBtn"><span class="copy-icon">⎘</span> 複製提示詞</button>
