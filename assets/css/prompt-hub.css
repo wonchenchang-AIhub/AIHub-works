@@ -2423,3 +2423,12 @@ body{
     bottom: calc(84px + env(safe-area-inset-bottom));
   }
 }
+
+
+/* === v3.0.1 Card Polish === */
+.prompt-card{display:flex;flex-direction:column;height:100%;border-radius:16px;transition:transform .2s ease,box-shadow .2s ease;padding:24px}
+.prompt-card:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(0,0,0,.12)}
+.prompt-card h3{font-size:1.15rem;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prompt-card .description,.prompt-description{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:3em}
+.prompt-card .actions{margin-top:auto;display:flex;gap:12px}
+.prompt-card .actions>*{flex:1;min-height:44px}
