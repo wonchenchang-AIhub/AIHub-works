@@ -24,6 +24,7 @@
       <div class="hero-right">
         <p class="hero-quote-above">「AI 給你什麼，取決於你怎麼問它。」</p>
         <div class="search-wrap">
+  <button type="button" class="search-clear-btn" id="searchClearBtn" aria-label="清除搜尋" title="清除搜尋">×</button>
           <input type="search" id="searchInput" class="search-input" placeholder="搜尋提示詞名稱、說明或內容…" aria-label="搜尋提示詞">
         </div>
       </div>
@@ -68,6 +69,7 @@
 </div>
 
 
+<div class="search-status" id="searchStatus" aria-live="polite"></div>
 <main class="main-grid" id="cardGrid"></main>
 
 
@@ -86,7 +88,12 @@
       </section>
 
     </div>
-    <div class="modal-footer">
+    <div class="modal-navigation">
+        <button type="button" class="modal-nav-btn" id="modalPrevBtn">← 上一篇</button>
+        <span class="modal-position" id="modalPosition"></span>
+        <button type="button" class="modal-nav-btn" id="modalNextBtn">下一篇 →</button>
+      </div>
+      <div class="modal-footer">
       <button class="copy-btn" id="copyBtn"><span class="copy-icon">⎘</span> 複製提示詞</button>
       <span class="copy-confirm" id="copyConfirm"></span><span class="modal-copy-count" id="modalCopyCount"></span>
     </div>
@@ -96,5 +103,6 @@
 <script src="assets/data/prompt-data.js"></script>
 <script src="assets/data/case-data.js"></script>
 <script src="assets/js/prompt-hub.js"></script>
+<button type="button" class="back-to-top" id="backToTop" aria-label="回到頂端" title="回到頂端">↑</button>
 </body>
 </html>
