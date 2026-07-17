@@ -24,6 +24,7 @@ function logCopyToGoogleForm(prompt) {
 
 let currentCat = 'all';
 let searchQuery = '';
+let currentModalId = null;
 
 
 /* ── Toast ──────────────────────────────────────────────────────────────── */
@@ -229,6 +230,71 @@ function escapeHtml(str) {
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function highlightText(text, query) {
+  const safeText = escapeHtml(String(text || ''));
+  const q = String(query || '').trim();
+  if (!q) return safeText;
+
+  const escapedQuery = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return safeText.replace(
+    new RegExp(`(${escapedQuery})`, 'gi'),
+    '<mark class="search-highlight">$1</mark>'
+  );
+}
+
+function getVisiblePrompts() {
+  const q = searchQuery.trim().toLowerCase();
+  const favoriteIds = getFavoriteIds();
+  const recentIds = loadIdList(RECENT_KEY);
+
+  let items = PROMPTS.filter(p => {
+    let matchCat = currentCat === 'all' || p.cat === currentCat;
+    if (currentCat === 'favorites') matchCat = favoriteIds.includes(Number(p.id));
+    if (currentCat === 'recent') matchCat = recentIds.includes(Number(p.id));
+    if (currentCat === 'popular') matchCat = true;
+
+    const categoryLabel = String(catInfo(p.cat).label || '').toLowerCase();
+    const matchQ = !q ||
+      String(p.title || '').toLowerCase().includes(q) ||
+      String(p.content || '').toLowerCase().includes(q) ||
+      String(p.scene || '').toLowerCase().includes(q) ||
+      String(p.desc || '').toLowerCase().includes(q) ||
+      categoryLabel.includes(q);
+
+    return matchCat && matchQ;
+  });
+
+  if (currentCat === 'recent') {
+    items.sort((a, b) =>
+      recentIds.indexOf(Number(a.id)) - recentIds.indexOf(Number(b.id))
+    );
+  }
+
+  if (currentCat === 'popular') {
+    items.sort((a, b) => getCount(b.id) - getCount(a.id));
+    items = items.slice(0, 20);
+  }
+
+  return items;
+}
+
+function updateSearchStatus(count) {
+  const status = document.getElementById('searchStatus');
+  const clearButton = document.getElementById('searchClearBtn');
+  if (!status) return;
+
+  if (searchQuery.trim()) {
+    status.innerHTML = `找到 <strong>${count}</strong> 組符合「${escapeHtml(searchQuery.trim())}」的提示詞`;
+    status.classList.add('is-visible');
+    if (clearButton) clearButton.classList.add('is-visible');
+  } else {
+    status.textContent = '';
+    status.classList.remove('is-visible');
+    if (clearButton) clearButton.classList.remove('is-visible');
+  }
+}
+
+
 /* ── Copy utilities ─────────────────────────────────────────────────────── */
 function doPromptCopy(text, btn) {
   navigator.clipboard.writeText(text).then(() => {
@@ -250,38 +316,9 @@ function doCaseCopy(text, btn) {
 /* ── Card rendering ─────────────────────────────────────────────────────── */
 function renderCards() {
   const grid = document.getElementById('cardGrid');
-  const q = searchQuery.trim().toLowerCase();
-  const favoriteIds = getFavoriteIds();
-  const recentIds = loadIdList(RECENT_KEY);
+  const filtered = getVisiblePrompts();
 
-  let filtered = PROMPTS.filter(p => {
-    let matchCat = currentCat === 'all' || p.cat === currentCat;
-    if (currentCat === 'favorites') matchCat = favoriteIds.includes(Number(p.id));
-    if (currentCat === 'recent') matchCat = recentIds.includes(Number(p.id));
-    if (currentCat === 'popular') matchCat = true;
-
-    const categoryLabel = String(catInfo(p.cat).label || '').toLowerCase();
-    const matchQ = !q ||
-      String(p.title || '').toLowerCase().includes(q) ||
-      String(p.content || '').toLowerCase().includes(q) ||
-      String(p.scene || '').toLowerCase().includes(q) ||
-      String(p.desc || '').toLowerCase().includes(q) ||
-      categoryLabel.includes(q);
-
-    return matchCat && matchQ;
-  });
-
-  if (currentCat === 'recent') {
-    filtered.sort((a, b) =>
-      recentIds.indexOf(Number(a.id)) - recentIds.indexOf(Number(b.id))
-    );
-  }
-
-  if (currentCat === 'popular') {
-    filtered.sort((a, b) => getCount(b.id) - getCount(a.id));
-    filtered = filtered.slice(0, 20);
-  }
-
+  updateSearchStatus(filtered.length);
 
   if (!filtered.length) {
     const message = currentCat === 'favorites'
@@ -309,7 +346,7 @@ function renderCards() {
     return `
       <article class="prompt-card">
         <header class="prompt-card__header">
-          <span class="prompt-card__category">${cat.icon} ${cat.label}</span>
+          <span class="prompt-card__category">${cat.icon} ${highlightText(cat.label, searchQuery)}</span>
           <button
             class="favorite-btn ${favorite ? 'is-favorite' : ''}"
             type="button"
@@ -329,9 +366,9 @@ function renderCards() {
         </header>
 
         <div class="prompt-card__body" onclick="openModal(${p.id})">
-          <h2 class="prompt-card__title">${escapeHtml(p.title)}</h2>
-          ${p.scene ? `<p class="prompt-card__scene">${escapeHtml(p.scene)}</p>` : ''}
-          <p class="prompt-card__summary">${escapeHtml(p.content)}</p>
+          <h2 class="prompt-card__title">${highlightText(p.title, searchQuery)}</h2>
+          ${p.scene ? `<p class="prompt-card__scene">${highlightText(p.scene, searchQuery)}</p>` : ''}
+          <p class="prompt-card__summary">${highlightText(p.content, searchQuery)}</p>
         </div>
 
         <footer class="prompt-card__footer">
@@ -465,6 +502,7 @@ function toggleCases(event, id) {
 
 function openModal(id) {
   rememberRecent(id);
+  currentModalId = Number(id);
   __modalCaseCache = [];
   const p = PROMPTS.find(x => x.id === id);
   if (!p) return;
@@ -578,6 +616,44 @@ function modalCopyCase(btn, idx) {
 }
 
 /* ── Close modal ────────────────────────────────────────────────────────── */
+
+function updateModalNavigation() {
+  const items = getVisiblePrompts();
+  const currentIndex = items.findIndex(item => Number(item.id) === Number(currentModalId));
+  const prevButton = document.getElementById('modalPrevBtn');
+  const nextButton = document.getElementById('modalNextBtn');
+  const position = document.getElementById('modalPosition');
+
+  if (position) {
+    position.textContent = currentIndex >= 0 ? `${currentIndex + 1} / ${items.length}` : '';
+  }
+
+  if (prevButton) {
+    prevButton.disabled = currentIndex <= 0;
+    prevButton.onclick = () => {
+      if (currentIndex > 0) openModal(items[currentIndex - 1].id);
+    };
+  }
+
+  if (nextButton) {
+    nextButton.disabled = currentIndex < 0 || currentIndex >= items.length - 1;
+    nextButton.onclick = () => {
+      if (currentIndex >= 0 && currentIndex < items.length - 1) {
+        openModal(items[currentIndex + 1].id);
+      }
+    };
+  }
+}
+
+function navigateModal(direction) {
+  const items = getVisiblePrompts();
+  const currentIndex = items.findIndex(item => Number(item.id) === Number(currentModalId));
+  const nextIndex = currentIndex + direction;
+  if (nextIndex >= 0 && nextIndex < items.length) {
+    openModal(items[nextIndex].id);
+  }
+}
+
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('open');
   document.body.style.overflow = '';
@@ -651,7 +727,43 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape') {
     closeModal();
   }
+
+  const overlay = document.getElementById('modalOverlay');
+  const modalOpen = overlay && overlay.classList.contains('open');
+
+  if (modalOpen && event.key === 'ArrowLeft') {
+    navigateModal(-1);
+  }
+
+  if (modalOpen && event.key === 'ArrowRight') {
+    navigateModal(1);
+  }
 });
+
+
+const searchClearBtn = document.getElementById('searchClearBtn');
+if (searchClearBtn) {
+  searchClearBtn.addEventListener('click', () => {
+    const input = document.getElementById('searchInput');
+    searchQuery = '';
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+    renderCards();
+  });
+}
+
+const backToTop = document.getElementById('backToTop');
+if (backToTop) {
+  window.addEventListener('scroll', () => {
+    backToTop.classList.toggle('is-visible', window.scrollY > 500);
+  });
+
+  backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
 
 /* ── Init ───────────────────────────────────────────────────────────────── */
 updatePersonalCounts();
