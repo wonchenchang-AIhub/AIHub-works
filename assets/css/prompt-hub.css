@@ -1966,3 +1966,188 @@ body {
     height: 30px;
   }
 }
+
+
+/* =========================================================
+   AIHub Works Prompt Hub v2.2
+   Dashboard、排序、推薦、閱讀時間與相關提示詞
+   ========================================================= */
+
+.hub-dashboard {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 14px 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.hub-kpis {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+}
+
+.hub-kpi {
+  min-width: 92px;
+  padding: 8px 12px;
+  border: 1px solid #dfe5ee;
+  border-radius: 12px;
+  background: rgba(255,255,255,.86);
+}
+
+.hub-kpi strong,
+.hub-kpi span {
+  display: block;
+}
+
+.hub-kpi strong {
+  color: #172033;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.hub-kpi span {
+  margin-top: 3px;
+  color: #758195;
+  font-size: 11px;
+}
+
+.hub-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.daily-pick-btn {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid rgba(216,154,0,.32);
+  border-radius: 10px;
+  background: #fff8da;
+  color: #8e6700;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sort-control {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #667286;
+  font-size: 12px;
+}
+
+.sort-control select {
+  min-height: 40px;
+  padding: 0 34px 0 12px;
+  border: 1px solid #d8dfe8;
+  border-radius: 10px;
+  background: #fff;
+  color: #172033;
+  font-family: inherit;
+}
+
+.prompt-card__meta {
+  justify-content: space-between;
+}
+
+.prompt-card__reading,
+.prompt-card__copies {
+  color: #788496;
+  font-size: 12px;
+}
+
+.modal-related {
+  padding: 18px 22px 24px;
+  border-top: 1px solid #e7ebf0;
+}
+
+.modal-related-title {
+  margin-bottom: 10px;
+  color: #172033;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.modal-related-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.related-prompt-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #dfe5ee;
+  border-radius: 10px;
+  background: #fff;
+  color: #263247;
+  text-align: left;
+  cursor: pointer;
+}
+
+.related-prompt-btn strong {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prompt-card .favorite-btn:active,
+.prompt-card .share-btn:active,
+.prompt-card .card-preview-btn:active,
+.prompt-card .card-copy-prompt-btn:active,
+.daily-pick-btn:active {
+  transform: scale(.97);
+}
+
+@media (max-width: 900px) {
+  .hub-dashboard {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hub-kpis {
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .hub-controls {
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 640px) {
+  .hub-dashboard {
+    padding: 10px 12px 0;
+    gap: 10px;
+  }
+
+  .hub-kpi {
+    min-width: 82px;
+    padding: 7px 10px;
+  }
+
+  .hub-kpi strong {
+    font-size: 16px;
+  }
+
+  .daily-pick-btn,
+  .sort-control select {
+    min-height: 42px;
+  }
+
+  .sort-control span {
+    display: none;
+  }
+
+  .modal-related-list {
+    grid-template-columns: 1fr;
+  }
+}
