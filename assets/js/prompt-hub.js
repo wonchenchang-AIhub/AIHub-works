@@ -133,20 +133,6 @@ window.addEventListener('DOMContentLoaded', function() {
   _memCounts = _lsLoad();
 });
 
-function getReadingSeconds(prompt) {
-  const length = String(prompt.content || '').replace(/\s+/g, '').length;
-  return Math.max(20, Math.ceil(length / 8));
-}
-
-function formatReadingTime(prompt) {
-  const seconds = getReadingSeconds(prompt);
-  if (seconds < 60) return `約 ${seconds} 秒`;
-  return `約 ${Math.ceil(seconds / 60)} 分鐘`;
-}
-
-
-
-
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 function catInfo(key) {
   return CATEGORIES[key] || { label: key, icon: '◉', class: '' };
@@ -297,12 +283,6 @@ function renderCards() {
         </div>
 
         <footer class="prompt-card__footer">
-          <div class="prompt-card__meta">
-            <span class="prompt-card__reading">閱讀 ${formatReadingTime(p)}</span>
-            ${cases.length ? `<span class="prompt-card__cases">${cases.length} 個案例</span>` : ''}
-            <span class="prompt-card__copies" title="複製次數">複製 ${copies}</span>
-          </div>
-
           <div class="prompt-card__actions">
             <button
               class="card-preview-btn"
@@ -313,8 +293,9 @@ function renderCards() {
             <button
               class="card-copy-prompt-btn"
               type="button"
+              aria-label="複製提示詞，目前已複製 ${copies} 次"
               onclick="copyPrompt(event, ${p.id})">
-              ⎘ 複製提示詞
+              ⎘ 複製提示詞 <span class="card-copy-count" aria-hidden="true">· ${copies}</span>
             </button>
           </div>
         </footer>
@@ -378,9 +359,9 @@ function copyPrompt(event, id) {
   logCopyToGoogleForm(prompt);
 
   const newCount = incrementCount(id);
-  const card = button ? button.closest('.prompt-card') : null;
-  const counter = card ? card.querySelector('.prompt-card__copies') : null;
-  if (counter) counter.textContent = `複製 ${newCount}`;
+  const counter = button ? button.querySelector('.card-copy-count') : null;
+  if (counter) counter.textContent = `· ${newCount}`;
+  if (button) button.setAttribute('aria-label', `複製提示詞，目前已複製 ${newCount} 次`);
   showToast('✓ 已複製提示詞');
 }
 

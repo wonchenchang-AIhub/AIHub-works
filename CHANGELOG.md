@@ -7,6 +7,7 @@
 - 移除 KPI、排序列、Related 與舊 Card selector 等程式殘留。
 - 統一 Header、搜尋、分類、Prompt Card、Modal、實戰案例與 Footer 視覺。
 - Card 右上角只保留收藏，分享入口移至 Modal。
+- Card 移除閱讀時間與案例數統計，複製次數整合至複製按鈕以減少一列高度。
 - 修復 Modal 上一篇／下一篇狀態與複製次數更新。
 - Prompt 與案例總數改由實際資料自動顯示。
 - 保留搜尋、分類、收藏、最近瀏覽、熱門、分享、Toast、案例、深連結與鍵盤導覽。

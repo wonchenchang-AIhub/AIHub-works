@@ -450,28 +450,6 @@ a:focus-visible {
   border-top: 1px solid var(--border-soft);
 }
 
-.prompt-card__meta {
-  display: flex;
-  min-height: 24px;
-  margin-bottom: 11px;
-  flex-wrap: wrap;
-  gap: 7px;
-}
-
-.prompt-card__reading,
-.prompt-card__cases,
-.prompt-card__copies {
-  display: inline-flex;
-  align-items: center;
-  min-height: 23px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  color: #6d798a;
-  background: #f3f6f9;
-  font-size: 11px;
-  line-height: 1;
-}
-
 .prompt-card__actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -497,6 +475,19 @@ a:focus-visible {
   border-radius: 11px;
   font-size: 13px;
   font-weight: 700;
+}
+
+.card-copy-prompt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.card-copy-count {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: .78;
 }
 
 .card-preview-btn {
