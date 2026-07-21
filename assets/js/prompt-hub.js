@@ -1,10 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════════════════
-   app.js  ·  AI 提示詞資料庫（桌機版）
-   按鈕設計：
-     ① 複製提示詞（藍色）  ─ 複製主提示詞全文
-     ② 複製案例（綠色）    ─ 複製案例情境提示詞
-   案例內容存在 window.__caseCache，按鈕只傳 index，完全避開 HTML encode 問題。
-═══════════════════════════════════════════════════════════════════════════ */
+/* AIHub Works Prompt Hub v3.5 */
 
 /* ── State ─────────────────────────────────────────────────────────────── */
 
@@ -100,16 +94,7 @@ function updatePersonalCounts() {
 
 
 /* ── Case prompt cache ───────────────────────────────────────────────────── */
-window.__caseCache = [];
 let __modalCaseCache = [];
-
-function storeCasePrompt(text) {
-  window.__caseCache.push(text);
-  return window.__caseCache.length - 1;
-}
-function getCasePrompt(idx) {
-  return window.__caseCache[idx] || '';
-}
 
 /* ── Copy-count display (localStorage only) ─────────────────────────────── */
 var _LS_KEY     = 'prompt_copy_counts';
@@ -136,25 +121,6 @@ function getCount(id) {
   return (_memCounts || _lsLoad())[id] || 0;
 }
 
-function refreshAllCountPills() {
-  if (!_memCounts) return;
-  document.querySelectorAll('.card[data-id]').forEach(function(card) {
-    var id  = parseInt(card.getAttribute('data-id'));
-    var cnt = (_memCounts[id] || 0);
-    var pill = card.querySelector('.card-copies');
-    if (!pill) return;
-    if (cnt > 0) {
-      pill.textContent = '⎘ ' + fmt(cnt);
-      pill.title = '已複製 ' + cnt + ' 次';
-      pill.classList.remove('card-copies-zero');
-    } else {
-      pill.textContent = '⎘ 0';
-      pill.classList.add('card-copies-zero');
-    }
-  });
-}
-
-
 function incrementCount(id) {
   var c = _memCounts || _lsLoad();
   c[id] = (c[id] || 0) + 1;
@@ -165,10 +131,7 @@ function incrementCount(id) {
 
 window.addEventListener('DOMContentLoaded', function() {
   _memCounts = _lsLoad();
-  refreshAllCountPills();
 });
-
-function fmt(n) { return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n); }
 
 function getReadingSeconds(prompt) {
   const length = String(prompt.content || '').replace(/\s+/g, '').length;
@@ -184,39 +147,9 @@ function formatReadingTime(prompt) {
 
 
 
-function getRelatedPrompts(prompt, limit = 4) {
-  const sourceText = `${prompt.title || ''} ${prompt.scene || ''} ${prompt.desc || ''} ${prompt.content || ''}`.toLowerCase();
-  const sourceWords = new Set(
-    sourceText
-      .replace(/[^\p{L}\p{N}]+/gu, ' ')
-      .split(/\s+/)
-      .filter(word => word.length >= 2)
-  );
-
-  return PROMPTS
-    .filter(item => Number(item.id) !== Number(prompt.id))
-    .map(item => {
-      let score = item.cat === prompt.cat ? 12 : 0;
-      const candidateText = `${item.title || ''} ${item.scene || ''} ${item.desc || ''}`.toLowerCase();
-      sourceWords.forEach(word => {
-        if (candidateText.includes(word)) score += 1;
-      });
-      return { item, score };
-    })
-    .filter(entry => entry.score > 0)
-    .sort((a, b) => b.score - a.score || getCount(b.item.id) - getCount(a.item.id))
-    .slice(0, limit)
-    .map(entry => entry.item);
-}
-
-
-
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 function catInfo(key) {
   return CATEGORIES[key] || { label: key, icon: '◉', class: '' };
-}
-function previewText(content) {
-  return content.replace(/#+\s/g, '').replace(/[│|]/g, '').replace(/\n+/g, ' ').trim();
 }
 function getCases(pid) {
   return (typeof CASES_BY_PROMPT !== 'undefined' && CASES_BY_PROMPT[pid])
@@ -355,14 +288,6 @@ function renderCards() {
             title="${favorite ? '取消收藏' : '加入收藏'}">
             ${favorite ? '★' : '☆'}
           </button>
-          <button
-            class="share-btn"
-            type="button"
-            onclick="sharePrompt(event, ${p.id})"
-            aria-label="分享提示詞"
-            title="分享提示詞">
-            ↗
-          </button>
         </header>
 
         <div class="prompt-card__body" onclick="openModal(${p.id})">
@@ -455,7 +380,7 @@ function copyPrompt(event, id) {
   const newCount = incrementCount(id);
   const card = button ? button.closest('.prompt-card') : null;
   const counter = card ? card.querySelector('.prompt-card__copies') : null;
-  if (counter) counter.textContent = `⎘ ${newCount}`;
+  if (counter) counter.textContent = `複製 ${newCount}`;
   showToast('✓ 已複製提示詞');
 }
 
@@ -577,9 +502,11 @@ function openModal(id) {
   const overlay = document.getElementById('modalOverlay');
   document.getElementById('modalScroll').scrollTop = 0;
   overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
   overlay.dataset.promptId = id;
   document.body.style.overflow = 'hidden';
   document.getElementById('copyConfirm').classList.remove('show');
+  updateModalNavigation();
 }
 
 /* Modal：複製提示詞（藍）*/
@@ -599,13 +526,7 @@ document.getElementById('copyBtn').addEventListener('click', () => {
     confirm.classList.add('show');
     setTimeout(() => confirm.classList.remove('show'), 2400);
     document.getElementById('modalCopyCount').textContent = `已複製 ${newCnt} 次`;
-    const card = document.querySelector(`.card[data-id="${id}"]`);
-    if (card) {
-      const b = card.querySelector('.card-copies');
-      if (b) { b.textContent = `⎘ ${fmt(newCnt)}`; b.title = `已複製 ${newCnt} 次`; b.classList.remove('card-copies-zero'); b.classList.add('card-copies-bump'); setTimeout(() => b.classList.remove('card-copies-bump'), 500); }
-      const cpBtn = card.querySelector('.card-copy-prompt-btn');
-      if (cpBtn) { cpBtn.classList.add('copied-prompt'); cpBtn.textContent = '✓ 已複製！'; setTimeout(() => { cpBtn.classList.remove('copied-prompt'); cpBtn.textContent = '⎘ 複製提示詞'; }, 2200); }
-    }
+    renderCards();
   }).catch(err => console.error('複製失敗', err));
 });
 
@@ -656,14 +577,15 @@ function navigateModal(direction) {
 }
 
 function closeModal() {
-  document.getElementById('modalOverlay').classList.remove('open');
+  const overlay = document.getElementById('modalOverlay');
+  overlay.classList.remove('open');
+  overlay.setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
 }
 document.getElementById('modalClose').addEventListener('click', closeModal);
 document.getElementById('modalOverlay').addEventListener('click', e => {
   if (e.target === document.getElementById('modalOverlay')) closeModal();
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
 /* ── Category nav ───────────────────────────────────────────────────────── */
 document.getElementById('catNav').addEventListener('click', e => {
@@ -760,6 +682,13 @@ if (modalFooterClose) {
   modalFooterClose.addEventListener('click', closeModal);
 }
 
+const modalShareBtn = document.getElementById('modalShareBtn');
+if (modalShareBtn) {
+  modalShareBtn.addEventListener('click', event => {
+    if (currentModalId !== null) sharePrompt(event, currentModalId);
+  });
+}
+
 const backToTop = document.getElementById('backToTop');
 if (backToTop) {
   window.addEventListener('scroll', () => {
@@ -773,6 +702,18 @@ if (backToTop) {
 
 /* ── Init ───────────────────────────────────────────────────────────────── */
 updatePersonalCounts();
+document.querySelectorAll('.cat-btn[data-cat]').forEach(button => {
+  const category = button.dataset.cat;
+  if (!CATEGORIES[category]) return;
+  const count = button.querySelector('.cat-count');
+  if (count) count.textContent = PROMPTS.filter(prompt => prompt.cat === category).length;
+});
+const promptTotal = document.getElementById('promptTotal');
+const caseTotal = document.getElementById('caseTotal');
+const allCount = document.getElementById('count-all');
+if (promptTotal) promptTotal.textContent = PROMPTS.length;
+if (caseTotal) caseTotal.textContent = typeof CASES !== 'undefined' ? CASES.length : 0;
+if (allCount) allCount.textContent = PROMPTS.length;
 const popularCount = document.getElementById('count-popular');
 if (popularCount) popularCount.textContent = Math.min(20, PROMPTS.length);
 renderCards();
