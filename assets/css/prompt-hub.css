@@ -94,7 +94,7 @@ a:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 48px;
+  min-height: 36px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.13);
   color: rgba(255, 255, 255, 0.74);
   font-size: 13px;
@@ -111,11 +111,11 @@ a:focus-visible {
 }
 
 .hero-block {
-  padding: 34px 0 38px;
+  padding: 14px 0 16px;
 }
 
 .hero-eyebrow {
-  margin: 0 0 13px;
+  margin: 0 0 8px;
   color: #a5f3fc;
   font-size: 11px;
   font-weight: 700;
@@ -133,20 +133,20 @@ a:focus-visible {
   max-width: 760px;
   margin: 0;
   font-family: "Noto Serif TC", serif;
-  font-size: clamp(30px, 4vw, 52px);
+  font-size: clamp(28px, 3.2vw, 40px);
   font-weight: 600;
   line-height: 1.22;
   letter-spacing: -0.03em;
 }
 
 .hero-tagline {
-  margin: 14px 0 0;
+  margin: 6px 0 0;
   color: rgba(255, 255, 255, 0.75);
   font-size: 14px;
 }
 
 .hero-quote-above {
-  margin: 0 0 10px;
+  margin: 0 0 6px;
   color: rgba(255, 255, 255, 0.76);
   font-size: 13px;
 }
@@ -157,7 +157,7 @@ a:focus-visible {
 
 .search-input {
   width: 100%;
-  min-height: 52px;
+  min-height: 44px;
   padding: 0 48px 0 18px;
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 14px;
@@ -1004,16 +1004,16 @@ a:focus-visible {
   }
 
   .hero-block {
-    padding: 26px 0 30px;
+    padding: 16px 0 18px;
   }
 
   .hero-body {
     grid-template-columns: 1fr;
-    gap: 22px;
+    gap: 14px;
   }
 
   .hero-title {
-    font-size: clamp(28px, 8vw, 40px);
+    font-size: clamp(26px, 7vw, 34px);
   }
 
   .main-grid {
