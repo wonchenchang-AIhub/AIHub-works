@@ -2469,7 +2469,6 @@ const CASES = [
   ,
 
   // ── Auto-filled missing practical cases 2026-06-30 ───────────────────────
-  ,
   { id:'C92-A', type:'practice', typeLabel:'製造業', promptIds:[92],
     title:"案例 A｜倉管報價流程導入 AI 評估",
     scene:"誰：中小型五金批發商營運經理｜何時：年度數位化預算規劃期｜何地：台中倉儲辦公室｜什麼事：評估報價流程是否該導入 AI 工具｜為何：報價作業耗時且常有錯誤，老闆要求先評估可行性再編預算",
