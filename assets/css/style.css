@@ -153,6 +153,19 @@ h1 {
   color: var(--muted);
 }
 
+.card p + p {
+  margin-top: 18px;
+}
+
+.text-link {
+  color: var(--brand);
+  font-weight: 800;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}
+
 .site-footer {
   padding: 28px 0;
   color: var(--muted);
