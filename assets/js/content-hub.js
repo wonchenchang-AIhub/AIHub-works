@@ -125,7 +125,8 @@
 
     const callbackName = `aihubContentCallback_${Date.now()}`;
     const script = document.createElement('script');
-    const timer = window.setTimeout(() => finish(new Error('timeout')), 12000);
+    // Apps Script cold starts can exceed 12 seconds even when the API is healthy.
+    const timer = window.setTimeout(() => finish(new Error('timeout')), 30000);
 
     function finish(error, payload) {
       window.clearTimeout(timer);
