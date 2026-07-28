@@ -86,6 +86,10 @@ h1 {
   line-height: 1.12;
 }
 
+.hero h1 {
+  max-width: 1040px;
+}
+
 .lead {
   max-width: 700px;
   color: var(--muted);
