@@ -23,8 +23,10 @@
   }
 
   function safeUrl(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
     try {
-      const url = new URL(String(value || ''), window.location.href);
+      const url = new URL(raw, window.location.href);
       return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
     } catch (error) {
       return '';
