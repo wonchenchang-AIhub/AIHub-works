@@ -9,6 +9,40 @@ const ADMIN_HEADERS = {
   updated_at: '更新時間 [updated_at]'
 };
 
+const TOOL_INGEST_HEADERS = {
+  content_type: '內容類型 [content_type]',
+  title: '內容標題 [title]',
+  summary: '卡片摘要 [summary]',
+  tags: '標籤 [tags]',
+  publish_date: '預定發布日 [publish_date]',
+  cover_image_url: '封面圖片網址 [cover_image_url]',
+  source_url: '原文網址 [source_url]',
+  source_platform: '來源平台 [source_platform]',
+  source_author: '原作者 [source_author]',
+  tool_name: 'AI 工具名稱 [tool_name]',
+  curator_note: '我的選讀重點 [curator_note]',
+  source_publish_date: '原文發布日 [source_publish_date]',
+  source_message_id: '來源郵件識別碼 [source_message_id]',
+  source_file: '來源郵件檔案 [source_file]',
+  ai_status: 'AI 整理狀態 [ai_status]'
+};
+
+const TOOL_INGEST_LIMITS = {
+  title: 200,
+  summary: 2000,
+  tags: 500,
+  cover_image_url: 2000,
+  source_url: 2000,
+  source_platform: 100,
+  source_author: 200,
+  tool_name: 200,
+  curator_note: 2000,
+  source_publish_date: 40,
+  source_message_id: 200,
+  source_file: 500,
+  ai_status: 500
+};
+
 const TYPE_MAP = {
   'AI 教學簡報': 'learning',
   'AI 工具選讀': 'tools',
@@ -38,7 +72,8 @@ function setupContentBackend() {
       .create();
   }
 
-  SpreadsheetApp.getUi().alert('AIHub 內容後台已完成初始化。');
+  SpreadsheetApp.openById(AIHUB_SHEET_ID)
+    .toast('AIHub 內容後台已完成初始化。', 'AIHub 發布管理', 5);
 }
 
 function handleFormSubmit(event) {
@@ -106,6 +141,123 @@ function doGet(event) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+function doPost(event) {
+  try {
+    const body = parsePostBody_(event);
+    const expectedSecret = PropertiesService.getScriptProperties().getProperty('AIHUB_INGEST_SECRET');
+    if (!expectedSecret) throw new Error('尚未設定 AIHUB_INGEST_SECRET。');
+    if (!body.secret || body.secret !== expectedSecret) throw new Error('匯入驗證失敗。');
+    if (body.action !== 'ingest_tool_read') throw new Error('不支援的匯入動作。');
+
+    const result = ingestToolRead_(body.item || {});
+    return jsonOutput_({ ok: true, result: result });
+  } catch (error) {
+    return jsonOutput_({ ok: false, error: String(error && error.message || error) });
+  }
+}
+
+function parsePostBody_(event) {
+  const raw = event && event.postData && event.postData.contents;
+  if (!raw) throw new Error('缺少 POST 內容。');
+  return JSON.parse(raw);
+}
+
+function jsonOutput_(value) {
+  return ContentService.createTextOutput(JSON.stringify(value))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function ingestToolRead_(input) {
+  const sheet = getResponseSheet_();
+  ensureColumns_(sheet, TOOL_INGEST_HEADERS);
+  ensureAdminColumns_(sheet);
+
+  const item = sanitizeToolRead_(input);
+  const columns = getHeaderMap_(sheet);
+  const duplicate = findToolReadDuplicate_(sheet, columns, item);
+  if (duplicate) {
+    return {
+      created: false,
+      duplicate: true,
+      row: duplicate.row,
+      content_id: duplicate.content_id || ''
+    };
+  }
+
+  const row = sheet.getLastRow() + 1;
+  const values = {
+    content_type: 'AI 工具選讀',
+    title: item.title,
+    summary: item.summary,
+    tags: item.tags,
+    publish_date: item.publish_date || Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy/MM/dd'),
+    cover_image_url: item.cover_image_url,
+    source_url: item.source_url,
+    source_platform: item.source_platform,
+    source_author: item.source_author,
+    tool_name: item.tool_name,
+    curator_note: item.curator_note,
+    source_publish_date: item.source_publish_date,
+    source_message_id: item.source_message_id,
+    source_file: item.source_file,
+    ai_status: item.ai_status,
+    status: 'draft',
+    featured: 'no',
+    sort_order: 0,
+    updated_at: new Date()
+  };
+
+  Object.keys(values).forEach(function (key) {
+    if (columns[key]) sheet.getRange(row, columns[key]).setValue(values[key]);
+  });
+  initializeRow_(sheet, row);
+
+  return {
+    created: true,
+    duplicate: false,
+    row: row,
+    content_id: columns.content_id ? sheet.getRange(row, columns.content_id).getDisplayValue() : ''
+  };
+}
+
+function sanitizeToolRead_(input) {
+  const result = {};
+  Object.keys(TOOL_INGEST_LIMITS).forEach(function (key) {
+    result[key] = String(input[key] || '').trim().slice(0, TOOL_INGEST_LIMITS[key]);
+  });
+  result.publish_date = String(input.publish_date || '').trim().slice(0, 40);
+
+  if (!result.title) throw new Error('缺少標題。');
+  if (!result.summary) throw new Error('缺少摘要。');
+  if (!/^https?:\/\//i.test(result.source_url)) throw new Error('原文網址格式不正確。');
+  return result;
+}
+
+function findToolReadDuplicate_(sheet, columns, item) {
+  if (sheet.getLastRow() < 2) return null;
+  const checks = [
+    { key: 'source_url', value: item.source_url },
+    { key: 'source_message_id', value: item.source_message_id }
+  ].filter(function (check) {
+    return columns[check.key] && check.value;
+  });
+
+  for (let index = 0; index < checks.length; index += 1) {
+    const check = checks[index];
+    const values = sheet.getRange(2, columns[check.key], sheet.getLastRow() - 1, 1).getDisplayValues();
+    for (let offset = 0; offset < values.length; offset += 1) {
+      if (String(values[offset][0] || '').trim() === check.value) {
+        const row = offset + 2;
+        return {
+          row: row,
+          content_id: columns.content_id ? sheet.getRange(row, columns.content_id).getDisplayValue() : ''
+        };
+      }
+    }
+  }
+  return null;
+}
+
 function getResponseSheet_() {
   const spreadsheet = SpreadsheetApp.openById(AIHUB_SHEET_ID);
   const sheet = spreadsheet.getSheets().find(function (candidate) {
@@ -131,9 +283,16 @@ function headerKey_(header) {
 }
 
 function ensureAdminColumns_(sheet) {
+  ensureColumns_(sheet, ADMIN_HEADERS);
+}
+
+function ensureColumns_(sheet, headers) {
   const columns = getHeaderMap_(sheet);
-  Object.keys(ADMIN_HEADERS).forEach(function (key) {
-    if (!columns[key]) sheet.getRange(1, sheet.getLastColumn() + 1).setValue(ADMIN_HEADERS[key]);
+  Object.keys(headers).forEach(function (key) {
+    if (!columns[key]) {
+      sheet.getRange(1, sheet.getLastColumn() + 1).setValue(headers[key]);
+      columns[key] = sheet.getLastColumn();
+    }
   });
 }
 
