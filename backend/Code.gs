@@ -72,7 +72,8 @@ function setupContentBackend() {
       .create();
   }
 
-  SpreadsheetApp.getUi().alert('AIHub 內容後台已完成初始化。');
+  SpreadsheetApp.openById(AIHUB_SHEET_ID)
+    .toast('AIHub 內容後台已完成初始化。', 'AIHub 發布管理', 5);
 }
 
 function handleFormSubmit(event) {
