@@ -70,7 +70,7 @@ nav a:hover {
 }
 
 .hero {
-  padding: 96px 0 72px;
+  padding: 96px 0 28px;
 }
 
 .eyebrow {
@@ -121,7 +121,7 @@ h1 {
 }
 
 .section {
-  padding: 28px 0 88px;
+  padding: 12px 0 88px;
 }
 
 .section h2 {
@@ -192,7 +192,7 @@ h1 {
   }
 
   .hero {
-    padding: 72px 0 48px;
+    padding: 72px 0 28px;
   }
 
   .card-grid {
