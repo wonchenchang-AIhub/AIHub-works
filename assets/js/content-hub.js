@@ -42,15 +42,6 @@
       .join('');
   }
 
-  function coverHtml(item) {
-    const cover = safeUrl(item.cover_image_url);
-    if (cover) {
-      return `<img class="content-cover" src="${escapeHtml(cover)}" alt="" loading="lazy">`;
-    }
-    const icons = { learning: '📑', tools: '🧰', notes: '✍️' };
-    return `<div class="content-cover content-cover-placeholder" aria-hidden="true">${icons[page]}</div>`;
-  }
-
   function metaHtml(item) {
     const parts = [];
     if (item.publish_date) parts.push(`<span>${escapeHtml(item.publish_date)}</span>`);
@@ -97,7 +88,6 @@
 
     list.innerHTML = items.map((item) => `
       <article class="content-item">
-        ${coverHtml(item)}
         <div class="content-item-body">
           <div class="content-meta">${metaHtml(item)}</div>
           <h2>${escapeHtml(item.title)}</h2>
