@@ -91,9 +91,10 @@ h1 {
 }
 
 .lead {
-  max-width: 700px;
+  max-width: none;
   color: var(--muted);
   font-size: 1.15rem;
+  white-space: nowrap;
 }
 
 .actions {
@@ -177,6 +178,10 @@ h1 {
 }
 
 @media (max-width: 860px) {
+  .lead {
+    white-space: normal;
+  }
+
   .card-grid {
     grid-template-columns: repeat(2, 1fr);
   }
