@@ -70,10 +70,11 @@ nav a:hover {
 }
 
 .hero {
-  padding: 48px 0 14px;
+  padding: 24px 0 14px;
 }
 
 .eyebrow {
+  margin: 0;
   color: var(--brand);
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -197,7 +198,7 @@ h1 {
   }
 
   .hero {
-    padding: 36px 0 14px;
+    padding: 20px 0 14px;
   }
 
   .card-grid {
