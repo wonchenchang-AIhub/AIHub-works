@@ -40,9 +40,11 @@ a {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(255, 255, 255, 0.9);
+  color: #f8fafc;
+  background: linear-gradient(125deg, #172033 0%, #26344d 100%);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 24px rgba(23, 32, 51, 0.16);
 }
 
 .nav-wrap {
@@ -54,6 +56,7 @@ a {
 }
 
 .brand {
+  color: #ffffff;
   font-size: 1.15rem;
   font-weight: 800;
 }
@@ -61,23 +64,23 @@ a {
 nav {
   display: flex;
   gap: 20px;
-  color: var(--muted);
+  color: #d9e2ef;
   font-size: 0.95rem;
 }
 
 nav a:hover {
-  color: var(--brand);
+  color: #ffc2d9;
 }
 
 .header-contact {
   padding: 0 0 8px;
-  color: var(--muted);
+  color: #c4cfdd;
   font-size: 0.82rem;
   text-align: right;
 }
 
 .header-contact a {
-  color: var(--brand);
+  color: #ffc2d9;
   font-weight: 700;
 }
 
