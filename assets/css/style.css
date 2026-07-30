@@ -69,6 +69,22 @@ nav a:hover {
   color: var(--brand);
 }
 
+.header-contact {
+  padding: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-align: right;
+}
+
+.header-contact a {
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.header-contact a:hover {
+  text-decoration: underline;
+}
+
 .hero {
   padding: 24px 0 14px;
 }
@@ -203,7 +219,29 @@ h1 {
     padding: 20px 0 14px;
   }
 
+  .header-contact {
+    padding-bottom: 7px;
+    font-size: 0.76rem;
+    text-align: left;
+  }
+
   .card-grid {
     grid-template-columns: 1fr;
+  }
+
+  .card {
+    padding: 16px 20px;
+  }
+
+  .card h3 {
+    margin: 16px 0 6px;
+  }
+
+  .card p {
+    line-height: 1.5;
+  }
+
+  .card p + p {
+    margin-top: 8px;
   }
 }
