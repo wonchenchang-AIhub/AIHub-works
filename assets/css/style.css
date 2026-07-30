@@ -155,11 +155,32 @@ h1 {
 }
 
 .card {
+  --card-bg-start: #fff1f6;
+  --card-bg-end: #ffe8f1;
+  --card-border: #f1cedb;
   padding: 24px;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: linear-gradient(145deg, var(--card-bg-start), var(--card-bg-end));
+  border: 1px solid var(--card-border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: 0 12px 32px rgba(115, 48, 75, 0.09);
+}
+
+.card:nth-child(2) {
+  --card-bg-start: #ffedf4;
+  --card-bg-end: #fde2ec;
+  --card-border: #efc7d6;
+}
+
+.card:nth-child(3) {
+  --card-bg-start: #fce8f0;
+  --card-bg-end: #fadce8;
+  --card-border: #ecbed0;
+}
+
+.card:nth-child(4) {
+  --card-bg-start: #fae3ec;
+  --card-bg-end: #f7d6e4;
+  --card-border: #e9b4c9;
 }
 
 .card span {
