@@ -92,6 +92,7 @@ h1 {
 }
 
 .lead {
+  margin: 0;
   max-width: none;
   color: var(--muted);
   font-size: 1.15rem;
@@ -127,6 +128,7 @@ h1 {
 }
 
 .section h2 {
+  margin: 8px 0 24px;
   font-size: 1.9rem;
 }
 
