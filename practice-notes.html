@@ -28,7 +28,12 @@
     </section>
     <section class="container section" aria-label="實作筆記列表">
       <div class="content-toolbar">
-        <strong id="contentCount" class="content-count">載入中…</strong>
+        <div class="content-toolbar-main">
+          <strong id="contentCount" class="content-count">載入中…</strong>
+          <button id="clearTagFilter" class="tag-filter-summary" type="button" aria-label="清除標籤篩選" hidden>
+            標籤：<span id="activeTagLabel"></span><span class="tag-filter-close" aria-hidden="true">×</span>
+          </button>
+        </div>
         <span id="contentStatus" class="content-status" role="status"></span>
       </div>
       <div id="contentList" class="content-list" aria-live="polite"></div>

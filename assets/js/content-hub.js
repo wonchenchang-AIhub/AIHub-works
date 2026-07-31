@@ -5,7 +5,11 @@
   const list = document.getElementById('contentList');
   const count = document.getElementById('contentCount');
   const status = document.getElementById('contentStatus');
+  const clearTagFilter = document.getElementById('clearTagFilter');
+  const activeTagLabel = document.getElementById('activeTagLabel');
   const apiUrl = String(window.AIHUB_CONTENT_API_URL || '').trim();
+  let allItems = [];
+  let activeTag = String(new URLSearchParams(window.location.search).get('tag') || '').trim().slice(0, 80);
 
   const typeLabels = {
     learning: 'AI 教學簡報',
@@ -33,12 +37,23 @@
     }
   }
 
-  function tagsHtml(value) {
+  function itemTags(value) {
     return String(value || '')
       .split(/[,，]/)
       .map((tag) => tag.trim())
-      .filter(Boolean)
-      .map((tag) => `<span class="content-tag">${escapeHtml(tag)}</span>`)
+      .filter(Boolean);
+  }
+
+  function sameTag(first, second) {
+    return first.localeCompare(second, undefined, { sensitivity: 'base' }) === 0;
+  }
+
+  function tagsHtml(value) {
+    return itemTags(value)
+      .map((tag) => {
+        const selected = activeTag && sameTag(tag, activeTag);
+        return `<button type="button" class="content-tag${selected ? ' is-active' : ''}" data-tag="${escapeHtml(tag)}" aria-pressed="${selected ? 'true' : 'false'}" aria-label="顯示標籤「${escapeHtml(tag)}」的文章">${escapeHtml(tag)}</button>`;
+      })
       .join('');
   }
 
@@ -78,11 +93,31 @@
     return '';
   }
 
-  function render(items) {
-    count.textContent = `${items.length} 篇已發布內容`;
+  function filteredItems() {
+    if (!activeTag) return allItems;
+    return allItems.filter((item) => itemTags(item.tags).some((tag) => sameTag(tag, activeTag)));
+  }
+
+  function updateFilterSummary(items) {
+    if (!activeTag) {
+      count.textContent = `${allItems.length} 篇已發布內容`;
+      clearTagFilter.hidden = true;
+      activeTagLabel.textContent = '';
+      return;
+    }
+    count.textContent = `${items.length} 篇符合篩選（全部 ${allItems.length} 篇）`;
+    activeTagLabel.textContent = activeTag;
+    clearTagFilter.hidden = false;
+  }
+
+  function render() {
+    const items = filteredItems();
+    updateFilterSummary(items);
     status.textContent = '';
     if (!items.length) {
-      list.innerHTML = '<div class="content-empty"><strong>目前尚無已發布內容</strong><p>內容完成審核並在後台設為「發布」後，就會顯示在這裡。</p></div>';
+      list.innerHTML = activeTag
+        ? `<div class="content-empty"><strong>找不到標籤「${escapeHtml(activeTag)}」的文章</strong><p>請清除篩選，或選擇其他標籤。</p></div>`
+        : '<div class="content-empty"><strong>目前尚無已發布內容</strong><p>內容完成審核並在後台設為「發布」後，就會顯示在這裡。</p></div>';
       return;
     }
 
@@ -99,6 +134,16 @@
     `).join('');
   }
 
+  function setTagFilter(tag, historyMode) {
+    activeTag = String(tag || '').trim().slice(0, 80);
+    const url = new URL(window.location.href);
+    if (activeTag) url.searchParams.set('tag', activeTag);
+    else url.searchParams.delete('tag');
+    if (historyMode === 'push') window.history.pushState({}, '', url);
+    render();
+    document.querySelector('.content-toolbar').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function showError(message) {
     count.textContent = '';
     status.textContent = message;
@@ -108,7 +153,8 @@
 
   function loadJsonp() {
     if (!apiUrl) {
-      render([]);
+      allItems = [];
+      render();
       status.textContent = '內容後台連線設定中';
       return;
     }
@@ -127,7 +173,8 @@
         return;
       }
       const items = Array.isArray(payload && payload.items) ? payload.items : [];
-      render(items);
+      allItems = items;
+      render();
     }
 
     window[callbackName] = (payload) => finish(null, payload);
@@ -136,6 +183,19 @@
     script.src = `${apiUrl}${separator}type=${encodeURIComponent(page)}&callback=${encodeURIComponent(callbackName)}`;
     document.head.appendChild(script);
   }
+
+  list.addEventListener('click', (event) => {
+    const tagButton = event.target.closest('.content-tag');
+    if (!tagButton) return;
+    const selectedTag = String(tagButton.dataset.tag || '');
+    setTagFilter(activeTag && sameTag(selectedTag, activeTag) ? '' : selectedTag, 'push');
+  });
+
+  clearTagFilter.addEventListener('click', () => setTagFilter('', 'push'));
+  window.addEventListener('popstate', () => {
+    activeTag = String(new URLSearchParams(window.location.search).get('tag') || '').trim().slice(0, 80);
+    render();
+  });
 
   document.title = `${typeLabels[page]}｜AIHub Works`;
   loadJsonp();
