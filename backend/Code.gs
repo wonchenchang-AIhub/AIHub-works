@@ -54,6 +54,9 @@ function onOpen() {
     .createMenu('AIHub 發布管理')
     .addItem('初始化後台欄位', 'setupContentBackend')
     .addItem('補齊內容編號', 'backfillContentIds')
+    .addSeparator()
+    .addItem('同步全部內容到 Cloudflare D1', 'syncAllContentToD1')
+    .addItem('檢查 Cloudflare D1 連線', 'checkD1Connection')
     .addToUi();
 }
 
@@ -62,13 +65,19 @@ function setupContentBackend() {
   ensureAdminColumns_(sheet);
   backfillContentIds();
 
-  const exists = ScriptApp.getProjectTriggers().some(function (trigger) {
-    return trigger.getHandlerFunction() === 'handleFormSubmit';
+  const handlers = ScriptApp.getProjectTriggers().map(function (trigger) {
+    return trigger.getHandlerFunction();
   });
-  if (!exists) {
+  if (handlers.indexOf('handleFormSubmit') === -1) {
     ScriptApp.newTrigger('handleFormSubmit')
       .forSpreadsheet(SpreadsheetApp.openById(AIHUB_SHEET_ID))
       .onFormSubmit()
+      .create();
+  }
+  if (handlers.indexOf('handleContentEdit') === -1) {
+    ScriptApp.newTrigger('handleContentEdit')
+      .forSpreadsheet(SpreadsheetApp.openById(AIHUB_SHEET_ID))
+      .onEdit()
       .create();
   }
 
@@ -80,6 +89,7 @@ function handleFormSubmit(event) {
   const sheet = event.range.getSheet();
   ensureAdminColumns_(sheet);
   initializeRow_(sheet, event.range.getRow());
+  trySyncRowsToD1_(sheet, [event.range.getRow()]);
 }
 
 function onEdit(event) {
@@ -92,12 +102,56 @@ function onEdit(event) {
   }
 }
 
+function handleContentEdit(event) {
+  if (!event || event.range.getRow() < 2) return;
+  const sheet = event.range.getSheet();
+  if (sheet.getSheetId() !== AIHUB_RESPONSE_GID) return;
+
+  const rows = [];
+  const lastRow = event.range.getLastRow();
+  for (let row = event.range.getRow(); row <= lastRow; row += 1) {
+    initializeRow_(sheet, row);
+    rows.push(row);
+  }
+  trySyncRowsToD1_(sheet, rows);
+}
+
 function backfillContentIds() {
   const sheet = getResponseSheet_();
   ensureAdminColumns_(sheet);
-  for (let row = 2; row <= sheet.getLastRow(); row += 1) {
-    initializeRow_(sheet, row);
-  }
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+
+  const columns = getHeaderMap_(sheet);
+  const rowCount = lastRow - 1;
+  const values = sheet.getRange(2, 1, rowCount, sheet.getLastColumn()).getDisplayValues();
+  const ids = sheet.getRange(2, columns.content_id, rowCount, 1).getValues();
+  const statuses = sheet.getRange(2, columns.status, rowCount, 1).getValues();
+  const featured = sheet.getRange(2, columns.featured, rowCount, 1).getValues();
+  const sortOrders = sheet.getRange(2, columns.sort_order, rowCount, 1).getValues();
+  const updatedAt = sheet.getRange(2, columns.updated_at, rowCount, 1).getValues();
+  const stamp = Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyyMMdd-HHmmss');
+  const now = new Date();
+
+  values.forEach(function (row, index) {
+    const contentType = columns.content_type ? String(row[columns.content_type - 1] || '') : '';
+    if (!contentType) return;
+    if (!ids[index][0]) {
+      const normalizedType = TYPE_MAP[contentType];
+      const prefix = normalizedType === 'learning' ? 'LEARN' : normalizedType === 'tools' ? 'TOOL' : 'NOTE';
+      ids[index][0] = prefix + '-' + stamp + '-' + (index + 2);
+    }
+    if (!statuses[index][0]) statuses[index][0] = 'draft';
+    if (!featured[index][0]) featured[index][0] = 'no';
+    if (sortOrders[index][0] === '' || sortOrders[index][0] === null) sortOrders[index][0] = 0;
+    if (!updatedAt[index][0]) updatedAt[index][0] = now;
+  });
+
+  sheet.getRange(2, columns.content_id, rowCount, 1).setValues(ids);
+  sheet.getRange(2, columns.status, rowCount, 1).setValues(statuses);
+  sheet.getRange(2, columns.featured, rowCount, 1).setValues(featured);
+  sheet.getRange(2, columns.sort_order, rowCount, 1).setValues(sortOrders);
+  sheet.getRange(2, columns.updated_at, rowCount, 1).setValues(updatedAt);
 }
 
 function doGet(event) {
@@ -211,6 +265,7 @@ function ingestToolRead_(input) {
     if (columns[key]) sheet.getRange(row, columns[key]).setValue(values[key]);
   });
   initializeRow_(sheet, row);
+  trySyncRowsToD1_(sheet, [row]);
 
   return {
     created: true,
@@ -313,4 +368,107 @@ function initializeRow_(sheet, row) {
   const orderCell = sheet.getRange(row, columns.sort_order);
   if (!orderCell.getValue()) orderCell.setValue(0);
   sheet.getRange(row, columns.updated_at).setValue(new Date());
+}
+
+function syncAllContentToD1() {
+  const sheet = getResponseSheet_();
+  ensureAdminColumns_(sheet);
+  backfillContentIds();
+
+  const rows = [];
+  for (let row = 2; row <= sheet.getLastRow(); row += 1) rows.push(row);
+  if (!rows.length) {
+    SpreadsheetApp.getUi().alert('目前沒有可同步的內容。');
+    return;
+  }
+
+  const result = syncRowsToD1_(sheet, rows);
+  SpreadsheetApp.getUi().alert(
+    'Cloudflare D1 同步完成',
+    '已送出 ' + result.sent + ' 筆，D1 寫入 ' + result.written + ' 筆。',
+    SpreadsheetApp.getUi().ButtonSet.OK
+  );
+}
+
+function checkD1Connection() {
+  const config = getD1Config_();
+  const url = config.url.replace(/\/$/, '') + '/health';
+  const response = UrlFetchApp.fetch(url, {
+    method: 'get',
+    muteHttpExceptions: true
+  });
+  const status = response.getResponseCode();
+  if (status < 200 || status >= 300) {
+    throw new Error('D1 API 連線失敗，HTTP ' + status + '。');
+  }
+  const payload = JSON.parse(response.getContentText());
+  SpreadsheetApp.getUi().alert(
+    'Cloudflare D1 連線正常',
+    '服務：' + String(payload.service || 'aihub-content-api'),
+    SpreadsheetApp.getUi().ButtonSet.OK
+  );
+}
+
+function trySyncRowsToD1_(sheet, rows) {
+  try {
+    const properties = PropertiesService.getScriptProperties();
+    if (!properties.getProperty('AIHUB_D1_API_URL')) return;
+    syncRowsToD1_(sheet, rows);
+  } catch (error) {
+    console.error('D1 背景同步失敗：' + String(error && error.message || error));
+  }
+}
+
+function syncRowsToD1_(sheet, rows) {
+  const config = getD1Config_();
+  const uniqueRows = rows.filter(function (row, index, values) {
+    return row >= 2 && values.indexOf(row) === index;
+  });
+  const items = uniqueRows.map(function (row) {
+    return rowToContentItem_(sheet, row);
+  }).filter(function (item) {
+    return item && item.content_id && item.title && TYPE_MAP[item.content_type];
+  });
+
+  let written = 0;
+  const batchSize = 50;
+  for (let index = 0; index < items.length; index += batchSize) {
+    const batch = items.slice(index, index + batchSize);
+    const response = UrlFetchApp.fetch(config.url, {
+      method: 'post',
+      contentType: 'application/json; charset=utf-8',
+      headers: { Authorization: 'Bearer ' + config.secret },
+      payload: JSON.stringify({ action: 'sync_contents', items: batch }),
+      muteHttpExceptions: true
+    });
+    const status = response.getResponseCode();
+    const payload = JSON.parse(response.getContentText() || '{}');
+    if (status < 200 || status >= 300 || !payload.ok) {
+      throw new Error('D1 同步失敗（HTTP ' + status + '）：' + String(payload.error || '未知錯誤'));
+    }
+    written += Number(payload.written || 0);
+  }
+  return { sent: items.length, written: written };
+}
+
+function rowToContentItem_(sheet, row) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
+  const values = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
+  const item = {};
+  headers.forEach(function (header, index) {
+    const key = headerKey_(header);
+    if (key) item[key] = values[index] || '';
+  });
+  item.type = TYPE_MAP[item.content_type] || '';
+  return item;
+}
+
+function getD1Config_() {
+  const properties = PropertiesService.getScriptProperties();
+  const url = String(properties.getProperty('AIHUB_D1_API_URL') || '').trim();
+  const secret = String(properties.getProperty('AIHUB_INGEST_SECRET') || '').trim();
+  if (!url) throw new Error('尚未設定 AIHUB_D1_API_URL。');
+  if (!/^https:\/\//i.test(url)) throw new Error('AIHUB_D1_API_URL 必須使用 HTTPS。');
+  if (!secret) throw new Error('尚未設定 AIHUB_INGEST_SECRET。');
+  return { url: url.replace(/\/$/, ''), secret: secret };
 }
