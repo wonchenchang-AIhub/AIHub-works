@@ -2,6 +2,53 @@
 
 /* ── State ─────────────────────────────────────────────────────────────── */
 
+let activeCategories = CATEGORIES;
+let activePrompts = PROMPTS;
+let activeCases = CASES;
+let activeCasesByPrompt = CASES_BY_PROMPT;
+
+function buildCasesByPrompt(cases) {
+  const lookup = {};
+  cases.forEach(item => {
+    (Array.isArray(item.promptIds) ? item.promptIds : []).forEach(promptId => {
+      if (!lookup[promptId]) lookup[promptId] = [];
+      lookup[promptId].push(item);
+    });
+  });
+  return lookup;
+}
+
+async function loadPromptHubFromD1() {
+  const baseUrl = String(window.AIHUB_CONTENT_API_URL || '').trim().replace(/\/$/, '');
+  if (!baseUrl) return false;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const response = await fetch(`${baseUrl}/api/prompt-hub`, {
+      cache: 'no-cache',
+      signal: controller.signal
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const payload = await response.json();
+    if (!payload.ok || !payload.categories || !Array.isArray(payload.prompts) || !Array.isArray(payload.cases)) {
+      throw new Error('D1 Prompt Hub 回傳格式錯誤');
+    }
+    if (!payload.prompts.length || !payload.cases.length) {
+      throw new Error('D1 Prompt Hub 尚無可發布內容');
+    }
+    activeCategories = payload.categories;
+    activePrompts = payload.prompts;
+    activeCases = payload.cases;
+    activeCasesByPrompt = buildCasesByPrompt(activeCases);
+    return true;
+  } catch (error) {
+    console.warn('D1 Prompt Hub 載入失敗，改用網站內建備援資料。', error);
+    return false;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 /* ── Google Form 複製記錄 ─────────────────────────────────────────────── */
 var _COPY_LOG_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSd0ceJqdNzp3cHFPvOxkiu4wPy76nHqioj9I-0JP8_CNCjbDg/formResponse';
 
@@ -136,11 +183,10 @@ window.addEventListener('DOMContentLoaded', function() {
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 function catInfo(key) {
-  return CATEGORIES[key] || { label: key, icon: '◉', class: '' };
+  return activeCategories[key] || { label: key, icon: '◉', class: '' };
 }
 function getCases(pid) {
-  return (typeof CASES_BY_PROMPT !== 'undefined' && CASES_BY_PROMPT[pid])
-    ? CASES_BY_PROMPT[pid] : [];
+  return activeCasesByPrompt[pid] || [];
 }
 function caseTagClass(type) {
   if (type === 'practice') return 'practice';
@@ -167,7 +213,7 @@ function getVisiblePrompts() {
   const favoriteIds = getFavoriteIds();
   const recentIds = loadIdList(RECENT_KEY);
 
-  let items = PROMPTS.filter(p => {
+  let items = activePrompts.filter(p => {
     let matchCat = currentCat === 'all' || p.cat === currentCat;
     if (currentCat === 'favorites') matchCat = favoriteIds.includes(Number(p.id));
     if (currentCat === 'recent') matchCat = recentIds.includes(Number(p.id));
@@ -320,7 +366,7 @@ function renderCards() {
 
 async function sharePrompt(event, id) {
   if (event) event.stopPropagation();
-  const prompt = PROMPTS.find(item => Number(item.id) === Number(id));
+  const prompt = activePrompts.find(item => Number(item.id) === Number(id));
   if (!prompt) return;
 
   const url = new URL(window.location.href);
@@ -352,7 +398,7 @@ async function sharePrompt(event, id) {
 
 function copyPrompt(event, id) {
   if (event) event.stopPropagation();
-  const prompt = PROMPTS.find(item => Number(item.id) === Number(id));
+  const prompt = activePrompts.find(item => Number(item.id) === Number(id));
   if (!prompt) return;
 
   const button = event && event.currentTarget ? event.currentTarget : null;
@@ -412,7 +458,7 @@ function openModal(id) {
   rememberRecent(id);
   currentModalId = Number(id);
   __modalCaseCache = [];
-  const p = PROMPTS.find(x => x.id === id);
+  const p = activePrompts.find(x => Number(x.id) === Number(id));
   if (!p) return;
   const cat = catInfo(p.cat);
 
@@ -494,7 +540,7 @@ function openModal(id) {
 /* Modal：複製提示詞（藍）*/
 document.getElementById('copyBtn').addEventListener('click', () => {
   const id = parseInt(document.getElementById('modalOverlay').dataset.promptId);
-  const p  = PROMPTS.find(x => x.id === id);
+  const p  = activePrompts.find(x => Number(x.id) === Number(id));
   if (!p) return;
   navigator.clipboard.writeText(p.content).then(() => {
     const newCnt = incrementCount(id);
@@ -683,24 +729,34 @@ if (backToTop) {
 }
 
 /* ── Init ───────────────────────────────────────────────────────────────── */
-updatePersonalCounts();
-document.querySelectorAll('.cat-btn[data-cat]').forEach(button => {
-  const category = button.dataset.cat;
-  if (!CATEGORIES[category]) return;
-  const count = button.querySelector('.cat-count');
-  if (count) count.textContent = PROMPTS.filter(prompt => prompt.cat === category).length;
-});
-const promptTotal = document.getElementById('promptTotal');
-const caseTotal = document.getElementById('caseTotal');
-const allCount = document.getElementById('count-all');
-if (promptTotal) promptTotal.textContent = PROMPTS.length;
-if (caseTotal) caseTotal.textContent = typeof CASES !== 'undefined' ? CASES.length : 0;
-if (allCount) allCount.textContent = PROMPTS.length;
-const popularCount = document.getElementById('count-popular');
-if (popularCount) popularCount.textContent = Math.min(20, PROMPTS.length);
-renderCards();
+async function initializePromptHub() {
+  const grid = document.getElementById('cardGrid');
+  if (grid) {
+    grid.innerHTML = '<div class="no-results"><span>◎</span><p>正在載入提示詞資料…</p></div>';
+  }
 
-const deepLinkedPromptId = Number(new URLSearchParams(window.location.search).get('prompt'));
-if (Number.isFinite(deepLinkedPromptId) && PROMPTS.some(p => Number(p.id) === deepLinkedPromptId)) {
-  setTimeout(() => openModal(deepLinkedPromptId), 120);
+  await loadPromptHubFromD1();
+  updatePersonalCounts();
+  document.querySelectorAll('.cat-btn[data-cat]').forEach(button => {
+    const category = button.dataset.cat;
+    if (!activeCategories[category]) return;
+    const count = button.querySelector('.cat-count');
+    if (count) count.textContent = activePrompts.filter(prompt => prompt.cat === category).length;
+  });
+  const promptTotal = document.getElementById('promptTotal');
+  const caseTotal = document.getElementById('caseTotal');
+  const allCount = document.getElementById('count-all');
+  if (promptTotal) promptTotal.textContent = activePrompts.length;
+  if (caseTotal) caseTotal.textContent = activeCases.length;
+  if (allCount) allCount.textContent = activePrompts.length;
+  const popularCount = document.getElementById('count-popular');
+  if (popularCount) popularCount.textContent = Math.min(20, activePrompts.length);
+  renderCards();
+
+  const deepLinkedPromptId = Number(new URLSearchParams(window.location.search).get('prompt'));
+  if (Number.isFinite(deepLinkedPromptId) && activePrompts.some(p => Number(p.id) === deepLinkedPromptId)) {
+    setTimeout(() => openModal(deepLinkedPromptId), 120);
+  }
 }
+
+initializePromptHub();

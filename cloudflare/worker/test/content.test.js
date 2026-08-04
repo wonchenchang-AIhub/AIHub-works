@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import {
   normalizeContentItem,
   normalizeFeatured,
+  normalizePrompt,
+  normalizePromptCase,
+  normalizePromptCategory,
   normalizeStatus,
   normalizeType
 } from '../src/index.js';
@@ -46,4 +49,43 @@ test('preserves arbitrary content fields in the JSON payload', () => {
 test('rejects rows without stable IDs or titles', () => {
   assert.throws(() => normalizeContentItem({ content_type: 'AI 工具選讀', title: '缺編號' }), /內容編號/);
   assert.throws(() => normalizeContentItem({ content_id: 'TOOL-1', content_type: 'AI 工具選讀' }), /內容標題/);
+});
+
+test('normalizes Prompt Hub categories', () => {
+  const value = normalizePromptCategory({
+    id: 'decision',
+    label: '決策與分析',
+    icon: '📊',
+    class: 'cat-decision',
+    sort_order: 1
+  });
+  assert.equal(value.categoryId, 'decision');
+  assert.equal(value.cssClass, 'cat-decision');
+  assert.equal(value.status, 'published');
+});
+
+test('preserves Prompt Hub prompt payloads', () => {
+  const value = normalizePrompt({
+    id: 164,
+    cat: 'decision',
+    title: '議題訪問者',
+    desc: '動手前先問清楚',
+    content: '完整提示詞',
+    sort_order: 2
+  });
+  assert.equal(value.promptId, 164);
+  assert.equal(value.categoryId, 'decision');
+  assert.equal(JSON.parse(value.payloadJson).desc, '動手前先問清楚');
+});
+
+test('preserves Prompt Hub case relationships', () => {
+  const value = normalizePromptCase({
+    id: 'C164-A',
+    promptIds: [164],
+    title: '案例 A',
+    prompt: '案例提示詞'
+  });
+  assert.equal(value.caseId, 'C164-A');
+  assert.deepEqual(JSON.parse(value.promptIdsJson), [164]);
+  assert.equal(JSON.parse(value.payloadJson).prompt, '案例提示詞');
 });

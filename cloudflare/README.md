@@ -5,7 +5,8 @@
 - Google 試算表暫時保留為內容管理後台與備份，草稿、發布、封存流程不變。
 - Apps Script 將完整資料（包含 `draft`、`published`、`archived`）同步到 D1。
 - 正式網站只從 D1 讀取 `published`，Google Apps Script 保留為短期故障備援。
-- Prompt Hub 靜態提示詞、實戰案例、複製統計與每日 Email 不在第一階段搬移範圍內。
+- Prompt Hub 的分類、提示詞與實戰案例在第二階段同步到 D1，網站內建資料保留為故障備援。
+- Prompt Hub 複製統計與每日 Email 暫時維持 Google Form／Apps Script，不受內容資料庫切換影響。
 
 ## 安全原則
 
@@ -128,6 +129,38 @@ window.AIHUB_CONTENT_API_FALLBACK_URL = '原本的 Apps Script /exec 網址';
 - 試算表修改內容或把 `status` 改為 `published`：安裝型編輯觸發器會同步該列。
 - Outlook AI 工具選讀匯入：仍先寫入 Google 試算表，再由 Apps Script 同步 D1。
 - 若自動同步失敗，可使用「同步全部內容到 Cloudflare D1」重新同步，操作是可重複且不會建立重複列。
+
+## 第二階段：Prompt Hub
+
+Prompt Hub 目前仍以版本庫中的兩個檔案作為編輯母本：
+
+- `assets/data/prompt-data.js`：分類與提示詞
+- `assets/data/case-data.js`：實戰案例
+
+修改並檢查母本後，在 `cloudflare/worker` 執行：
+
+```powershell
+$env:AIHUB_INGEST_SECRET = [Environment]::GetEnvironmentVariable('AIHUB_INGEST_SECRET', 'User')
+npm run prompt-hub:sync -- --api https://aihub-content-api.<您的子網域>.workers.dev
+```
+
+同步工具會：
+
+1. 解析兩個母本檔案。
+2. 以每批最多 100 筆寫入 D1。
+3. 從公開 API 讀回資料並逐欄比對。
+
+同步只做新增與更新，不會自動刪除 D1 資料。若要停止發布某項內容，請明確把狀態改為 `archived`，再進行同步。
+
+正式網站讀取 `/api/prompt-hub`。若 D1 逾時、連線失敗或回傳空資料，前端會自動改用隨網站部署的靜態母本，因此提示詞頁仍可使用。
+
+可先執行唯讀盤點，不寫入 D1：
+
+```powershell
+npm run prompt-hub:dry-run -- --api https://aihub-content-api.<您的子網域>.workers.dev
+```
+
+複製按鈕目前仍把事件送到原 Google Form，既有每日 Email 報表流程保持不變。
 
 ## 回復方式
 
