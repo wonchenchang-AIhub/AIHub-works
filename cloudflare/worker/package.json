@@ -8,7 +8,9 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "db:migrate:local": "wrangler d1 migrations apply aihub-content --local",
-    "db:migrate:remote": "wrangler d1 migrations apply aihub-content --remote"
+    "db:migrate:remote": "wrangler d1 migrations apply aihub-content --remote",
+    "prompt-hub:dry-run": "node scripts/import-prompt-hub.mjs --dry-run",
+    "prompt-hub:sync": "node scripts/import-prompt-hub.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.104.0"
