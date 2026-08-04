@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "aihub-content-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-06-30",
+  "workers_dev": true,
+  "preview_urls": true,
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "aihub-content",
+      "database_id": "b6124a55-b5c7-4625-bede-eeabca553eb1",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

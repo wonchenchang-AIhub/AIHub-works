@@ -8,6 +8,7 @@
   const clearTagFilter = document.getElementById('clearTagFilter');
   const activeTagLabel = document.getElementById('activeTagLabel');
   const apiUrl = String(window.AIHUB_CONTENT_API_URL || '').trim();
+  const fallbackApiUrl = String(window.AIHUB_CONTENT_API_FALLBACK_URL || '').trim();
   let allItems = [];
   let activeTag = String(new URLSearchParams(window.location.search).get('tag') || '').trim().slice(0, 80);
 
@@ -151,7 +152,29 @@
     list.innerHTML = '<div class="content-empty"><strong>內容暫時無法載入</strong><p>請稍後重新整理頁面。</p></div>';
   }
 
-  function loadJsonp() {
+  function requestJsonp(targetUrl, timeoutMs) {
+    return new Promise((resolve, reject) => {
+      const callbackName = `aihubContentCallback_${Date.now()}`;
+      const script = document.createElement('script');
+      const timer = window.setTimeout(() => finish(new Error('timeout')), timeoutMs);
+
+      function finish(error, payload) {
+        window.clearTimeout(timer);
+        delete window[callbackName];
+        script.remove();
+        if (error) reject(error);
+        else resolve(payload);
+      }
+
+      window[callbackName] = (payload) => finish(null, payload);
+      script.onerror = () => finish(new Error('load failed'));
+      const separator = targetUrl.includes('?') ? '&' : '?';
+      script.src = `${targetUrl}${separator}type=${encodeURIComponent(page)}&callback=${encodeURIComponent(callbackName)}`;
+      document.head.appendChild(script);
+    });
+  }
+
+  async function loadContent() {
     if (!apiUrl) {
       allItems = [];
       render();
@@ -159,29 +182,20 @@
       return;
     }
 
-    const callbackName = `aihubContentCallback_${Date.now()}`;
-    const script = document.createElement('script');
-    // Apps Script cold starts can exceed 12 seconds even when the API is healthy.
-    const timer = window.setTimeout(() => finish(new Error('timeout')), 30000);
-
-    function finish(error, payload) {
-      window.clearTimeout(timer);
-      delete window[callbackName];
-      script.remove();
-      if (error) {
-        showError('後台連線失敗');
-        return;
+    try {
+      const primaryTimeout = apiUrl.includes('script.google.com') ? 30000 : 8000;
+      let payload;
+      try {
+        payload = await requestJsonp(apiUrl, primaryTimeout);
+      } catch (primaryError) {
+        if (!fallbackApiUrl || fallbackApiUrl === apiUrl) throw primaryError;
+        payload = await requestJsonp(fallbackApiUrl, 30000);
       }
-      const items = Array.isArray(payload && payload.items) ? payload.items : [];
-      allItems = items;
+      allItems = Array.isArray(payload && payload.items) ? payload.items : [];
       render();
+    } catch (error) {
+      showError('後台連線失敗');
     }
-
-    window[callbackName] = (payload) => finish(null, payload);
-    script.onerror = () => finish(new Error('load failed'));
-    const separator = apiUrl.includes('?') ? '&' : '?';
-    script.src = `${apiUrl}${separator}type=${encodeURIComponent(page)}&callback=${encodeURIComponent(callbackName)}`;
-    document.head.appendChild(script);
   }
 
   list.addEventListener('click', (event) => {
@@ -198,5 +212,5 @@
   });
 
   document.title = `${typeLabels[page]}｜AIHub Works`;
-  loadJsonp();
+  loadContent();
 }());
