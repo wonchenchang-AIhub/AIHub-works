@@ -18,6 +18,20 @@ const apiBase = String(
 const secret = String(process.env.AIHUB_INGEST_SECRET || '').trim();
 const dryRun = args.includes('--dry-run');
 
+// 類別整併後保留舊資料列，但改為 archived，避免公開 API 同時回傳新舊分類。
+// 使用封存而非刪除，必要時仍可由 D1 復原歷史結構。
+const retiredCategories = [
+  { id: 'preset', label: 'AI工具設定', icon: '⚙️', class: 'cat-preset' },
+  { id: 'ai_roles', label: '策略智囊', icon: '🧠', class: 'cat-ai-roles' },
+  { id: 'comms', label: '職場溝通', icon: '💼', class: 'cat-comms' },
+  { id: 'routine', label: '日常效率', icon: '📅', class: 'cat-routine' },
+  { id: 'life', label: '生活娛樂', icon: '✨', class: 'cat-life' }
+].map((item, index) => ({
+  ...item,
+  sort_order: 1000 + index,
+  status: 'archived'
+}));
+
 if (!apiBase) throw new Error('缺少 D1 Worker API 網址；請使用 --api 或設定 AIHUB_D1_API_URL。');
 if (!dryRun && !secret) throw new Error('缺少 AIHUB_INGEST_SECRET。');
 
@@ -103,9 +117,11 @@ const data = await loadStaticData();
 console.log(`來源資料：${data.categories.length} 個分類、${data.prompts.length} 組提示詞、${data.cases.length} 則案例。`);
 
 if (dryRun) {
+  console.log(`另有 ${retiredCategories.length} 個舊分類將標記為 archived。`);
   console.log('Dry run 完成，未寫入 D1。');
 } else {
   await syncEntity('categories', data.categories);
+  await syncEntity('categories', retiredCategories);
   await syncEntity('prompts', data.prompts);
   await syncEntity('cases', data.cases);
   const counts = await verify(data);
