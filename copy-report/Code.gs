@@ -1,12 +1,18 @@
 /**
- * Prompt Hub 每日複製統計報表
+ * AIHub Works 每日使用報表
  *
  * 綁定試算表：Prompt Hub 複製紀錄回覆
  * 回覆欄位：時間戳記、source_site、prompt_id、prompt_title、category、copied_at
+ *
+ * 事件編碼：
+ * - 提示詞複製：沿用既有資料格式。
+ * - 內容點閱：prompt_id 使用 CONTENT_VIEW:{type}:{content_id}；source_site
+ *   使用 AIHub-works:{type}:content-view。
  */
 
 const COPY_REPORT_CONFIG = Object.freeze({
   recipient: 'wonchen.chang@gmail.com',
+  spreadsheetId: '1x93u53DSteG4pmG6_YQfkyIKRtlYdhbHdU1E0Litgrc',
   responseSheetNames: ['Form_Responses', '表單回覆 1'],
   timezone: 'Asia/Taipei',
   reportHour: 7,
@@ -87,7 +93,7 @@ function previewPromptHubDailyReport() {
 }
 
 function buildPromptHubDailyReport_() {
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const spreadsheet = getReportSpreadsheet_();
   const sheet = COPY_REPORT_CONFIG.responseSheetNames
     .map((name) => spreadsheet.getSheetByName(name))
     .find(Boolean) || spreadsheet.getSheets()[0];
@@ -109,23 +115,34 @@ function buildPromptHubDailyReport_() {
   const periodRecords = records.filter(
     (record) => record.copiedAt >= period.start && record.copiedAt < period.end
   );
+  const copyRecords = records.filter((record) => record.eventType === 'prompt_copy');
+  const periodCopyRecords = periodRecords.filter((record) => record.eventType === 'prompt_copy');
+  const viewRecords = records.filter((record) => record.eventType === 'content_view');
+  const periodViewRecords = periodRecords.filter((record) => record.eventType === 'content_view');
 
-  const periodBySource = countBy_(periodRecords, (record) => record.sourceSite);
-  const totalBySource = countBy_(records, (record) => record.sourceSite);
-  const periodByCategory = countBy_(periodRecords, (record) => record.category);
-  const periodTopPrompts = topPrompts_(periodRecords, COPY_REPORT_CONFIG.topLimit);
+  const periodBySource = countBy_(periodCopyRecords, (record) => record.sourceSite);
+  const totalBySource = countBy_(copyRecords, (record) => record.sourceSite);
+  const periodByCategory = countBy_(periodCopyRecords, (record) => record.category);
+  const periodTopPrompts = topItems_(periodCopyRecords, COPY_REPORT_CONFIG.topLimit);
+  const periodViewsByType = countBy_(periodViewRecords, (record) => record.category);
+  const totalViewsByType = countBy_(viewRecords, (record) => record.category);
+  const periodTopContent = topItems_(periodViewRecords, COPY_REPORT_CONFIG.topLimit, true);
 
   const dateText = formatDate_(period.end, 'yyyy/MM/dd HH:mm');
   const periodText = `${formatDate_(period.start, 'yyyy/MM/dd HH:mm')} ～ ${formatDate_(period.end, 'yyyy/MM/dd HH:mm')}`;
-  const subject = `📊 Prompt Hub 日報 ${dateText} 新增 +${periodRecords.length} 次`;
+  const subject = `📊 AIHub Works 日報 ${dateText} 複製 +${periodCopyRecords.length}／點閱 +${periodViewRecords.length}`;
 
   const summary = {
     period: periodText,
-    totalCopies: records.length,
-    periodCopies: periodRecords.length,
+    totalCopies: copyRecords.length,
+    periodCopies: periodCopyRecords.length,
     sources: mergeSourceCounts_(periodBySource, totalBySource),
     categories: sortCountEntries_(periodByCategory),
     topPrompts: periodTopPrompts,
+    totalViews: viewRecords.length,
+    periodViews: periodViewRecords.length,
+    contentTypes: mergeContentViewCounts_(periodViewsByType, totalViewsByType, periodViewRecords.length),
+    topContent: periodTopContent,
   };
 
   return {
@@ -134,6 +151,16 @@ function buildPromptHubDailyReport_() {
     textBody: buildTextBody_(summary),
     htmlBody: buildHtmlBody_(summary),
   };
+}
+
+function getReportSpreadsheet_() {
+  const activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  if (activeSpreadsheet) return activeSpreadsheet;
+
+  if (!COPY_REPORT_CONFIG.spreadsheetId) {
+    throw new Error('這是獨立 Apps Script 專案，請在 COPY_REPORT_CONFIG.spreadsheetId 設定 Prompt Hub 回覆試算表 ID。');
+  }
+  return SpreadsheetApp.openById(COPY_REPORT_CONFIG.spreadsheetId);
 }
 
 function resolveColumns_(headers) {
@@ -178,6 +205,9 @@ function toCopyRecord_(row, columns) {
     promptId: String(row[columns.promptId] || '').trim(),
     promptTitle: String(row[columns.promptTitle] || '').trim() || '未命名提示詞',
     category: String(row[columns.category] || '').trim() || '未分類',
+    eventType: /^CONTENT_VIEW:/i.test(String(row[columns.promptId] || '').trim())
+      ? 'content_view'
+      : 'prompt_copy',
   };
 }
 
@@ -234,10 +264,29 @@ function mergeSourceCounts_(periodCounts, totalCounts) {
     .sort((a, b) => b.periodCount - a.periodCount || b.totalCount - a.totalCount);
 }
 
-function topPrompts_(records, limit) {
+function mergeContentViewCounts_(periodCounts, totalCounts, periodTotal) {
+  const contentTypes = ['AI 教學簡報', 'AI 工具選讀', 'AI 實作筆記'];
+  return contentTypes.map((name) => {
+    const periodCount = periodCounts[name] || 0;
+    return {
+      name,
+      periodCount,
+      totalCount: totalCounts[name] || 0,
+      periodShare: periodTotal ? periodCount / periodTotal : 0,
+    };
+  });
+}
+
+function topItems_(records, limit, includeCategory) {
   const grouped = records.reduce((result, record) => {
     const key = record.promptId || record.promptTitle;
-    if (!result[key]) result[key] = { title: record.promptTitle, count: 0 };
+    if (!result[key]) {
+      result[key] = {
+        title: record.promptTitle,
+        category: includeCategory ? record.category : '',
+        count: 0,
+      };
+    }
     result[key].count += 1;
     return result;
   }, {});
@@ -258,9 +307,15 @@ function buildTextBody_(summary) {
   const topPrompts = summary.topPrompts.length
     ? summary.topPrompts.map((item, index) => `${index + 1}. ${item.title}（${item.count} 次）`).join('\n')
     : '本期沒有複製紀錄';
+  const contentTypes = summary.contentTypes
+    .map((item) => `• ${item.name}　本期 +${item.periodCount}／累計 ${item.totalCount}／本期點閱占比 ${formatPercent_(item.periodShare)}`)
+    .join('\n');
+  const topContent = summary.topContent.length
+    ? summary.topContent.map((item, index) => `${index + 1}. [${item.category}] ${item.title}（${item.count} 次）`).join('\n')
+    : '本期沒有內容點閱紀錄';
 
   return [
-    '📊 Prompt Hub 每日使用報告',
+    '📊 AIHub Works 每日使用報告',
     `統計區間：${summary.period}`,
     '────────────────────────',
     `累計複製總數：${summary.totalCopies}　　本期新增：+${summary.periodCopies}`,
@@ -273,6 +328,14 @@ function buildTextBody_(summary) {
     '────────────────────────',
     '【本期最常被複製的提示詞 TOP 5】',
     topPrompts,
+    '────────────────────────',
+    `三個內容區累計點閱：${summary.totalViews}　　本期新增：+${summary.periodViews}`,
+    '【三個內容區點閱統計】',
+    contentTypes,
+    '※ 點閱占比＝各區本期點閱次數 ÷ 三區本期點閱總數，不是以訪客或曝光數計算的 CTR。',
+    '────────────────────────',
+    '【本期最常被點閱的內容 TOP 5】',
+    topContent,
   ].join('\n');
 }
 
@@ -292,10 +355,20 @@ function buildHtmlBody_(summary) {
   const topItems = summary.topPrompts.length
     ? summary.topPrompts.map((item) => `<li>${escapeHtml_(item.title)}（${item.count} 次）</li>`).join('')
     : '<li>本期沒有複製紀錄</li>';
+  const contentRows = summary.contentTypes.map((item) => `
+      <tr>
+        <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${escapeHtml_(item.name)}</td>
+        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e5e7eb">+${item.periodCount}</td>
+        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e5e7eb">${item.totalCount}</td>
+        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e5e7eb">${formatPercent_(item.periodShare)}</td>
+      </tr>`).join('');
+  const topContentItems = summary.topContent.length
+    ? summary.topContent.map((item) => `<li><strong>${escapeHtml_(item.category)}</strong>｜${escapeHtml_(item.title)}（${item.count} 次）</li>`).join('')
+    : '<li>本期沒有內容點閱紀錄</li>';
 
   return `
     <div style="font-family:Arial,'Noto Sans TC',sans-serif;color:#1f2937;line-height:1.7;max-width:680px">
-      <h2 style="margin:0 0 4px">📊 Prompt Hub 每日使用報告</h2>
+      <h2 style="margin:0 0 4px">📊 AIHub Works 每日使用報告</h2>
       <div style="color:#4b5563">統計區間：${escapeHtml_(summary.period)}</div>
       <p style="font-size:17px"><strong>累計複製總數：${summary.totalCopies}</strong>　　本期新增：<strong>+${summary.periodCopies}</strong></p>
 
@@ -316,6 +389,24 @@ function buildHtmlBody_(summary) {
 
       <h3>本期最常被複製的提示詞 TOP 5</h3>
       <ol>${topItems}</ol>
+
+      <h3>三個內容區點閱統計</h3>
+      <p style="font-size:17px"><strong>累計點閱：${summary.totalViews}</strong>　　本期新增：<strong>+${summary.periodViews}</strong></p>
+      <table style="border-collapse:collapse;width:100%;border:1px solid #d1d5db">
+        <thead style="background:#fdf2f8">
+          <tr>
+            <th style="padding:8px 12px;text-align:left">內容區</th>
+            <th style="padding:8px 12px;text-align:right">本期新增</th>
+            <th style="padding:8px 12px;text-align:right">累計</th>
+            <th style="padding:8px 12px;text-align:right">本期點閱占比</th>
+          </tr>
+        </thead>
+        <tbody>${contentRows}</tbody>
+      </table>
+      <p style="font-size:13px;color:#6b7280">點閱占比＝各區本期點閱次數 ÷ 三區本期點閱總數，不是以訪客或曝光數計算的 CTR。</p>
+
+      <h3>本期最常被點閱的內容 TOP 5</h3>
+      <ol>${topContentItems}</ol>
     </div>`;
 }
 
@@ -326,6 +417,10 @@ function escapeHtml_(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function formatPercent_(ratio) {
+  return `${(Number(ratio || 0) * 100).toFixed(1)}%`;
 }
 
 function formatDate_(date, pattern) {

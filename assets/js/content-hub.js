@@ -9,6 +9,7 @@
   const activeTagLabel = document.getElementById('activeTagLabel');
   const apiUrl = String(window.AIHUB_CONTENT_API_URL || '').trim();
   const fallbackApiUrl = String(window.AIHUB_CONTENT_API_FALLBACK_URL || '').trim();
+  const usageLogFormUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSd0ceJqdNzp3cHFPvOxkiu4wPy76nHqioj9I-0JP8_CNCjbDg/formResponse';
   let allItems = [];
   let activeTag = String(new URLSearchParams(window.location.search).get('tag') || '').trim().slice(0, 80);
 
@@ -45,6 +46,28 @@
       .filter(Boolean);
   }
 
+  function itemKey(item) {
+    return String(item && item.content_id || '').trim() || `title:${String(item && item.title || '').trim()}`;
+  }
+
+  function logContentView(item) {
+    if (!item) return;
+    try {
+      const data = new FormData();
+      data.append('entry.748276167', `CONTENT_VIEW:${page}:${itemKey(item)}`);
+      data.append('entry.324033027', String(item.title || '未命名內容'));
+      data.append('entry.2019876852', typeLabels[page] || page);
+      data.append('entry.98204614', new Date().toISOString());
+      data.append('entry.496213319', `AIHub-works:${page}:content-view`);
+      fetch(usageLogFormUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        keepalive: true,
+        body: data
+      }).catch(() => {});
+    } catch (error) {}
+  }
+
   function sameTag(first, second) {
     return first.localeCompare(second, undefined, { sensitivity: 'base' }) === 0;
   }
@@ -69,13 +92,14 @@
   }
 
   function actionsHtml(item) {
+    const contentKey = escapeHtml(itemKey(item));
     if (page === 'learning') {
       const pdf = safeUrl(item.pdf_file);
-      return pdf ? `<a class="content-action" href="${escapeHtml(pdf)}" target="_blank" rel="noopener">閱讀 PDF ↗</a>` : '';
+      return pdf ? `<a class="content-action" data-content-open="${contentKey}" href="${escapeHtml(pdf)}" target="_blank" rel="noopener">閱讀 PDF ↗</a>` : '';
     }
     if (page === 'tools') {
       const source = safeUrl(item.source_url);
-      return source ? `<a class="content-action" href="${escapeHtml(source)}" target="_blank" rel="noopener noreferrer">閱讀原文 ↗</a>` : '';
+      return source ? `<a class="content-action" data-content-open="${contentKey}" href="${escapeHtml(source)}" target="_blank" rel="noopener noreferrer">閱讀原文 ↗</a>` : '';
     }
     const prompt = safeUrl(item.related_prompt_url);
     return prompt ? `<a class="content-action secondary-action" href="${escapeHtml(prompt)}">相關提示詞 →</a>` : '';
@@ -86,7 +110,7 @@
       return `<p class="content-extra"><strong>我的選讀重點</strong><br>${escapeHtml(item.curator_note)}</p>`;
     }
     if (page === 'notes' && item.note_body) {
-      return `<details class="content-extra"><summary><strong>閱讀完整筆記</strong></summary><p>${escapeHtml(item.note_body)}</p></details>`;
+      return `<details class="content-extra" data-content-open="${escapeHtml(itemKey(item))}"><summary><strong>閱讀完整筆記</strong></summary><p>${escapeHtml(item.note_body)}</p></details>`;
     }
     if (page === 'learning' && item.learning_topics) {
       return `<p class="content-extra"><strong>教學主題：</strong>${escapeHtml(item.learning_topics)}</p>`;
@@ -200,10 +224,24 @@
 
   list.addEventListener('click', (event) => {
     const tagButton = event.target.closest('.content-tag');
-    if (!tagButton) return;
-    const selectedTag = String(tagButton.dataset.tag || '');
-    setTagFilter(activeTag && sameTag(selectedTag, activeTag) ? '' : selectedTag, 'push');
+    if (tagButton) {
+      const selectedTag = String(tagButton.dataset.tag || '');
+      setTagFilter(activeTag && sameTag(selectedTag, activeTag) ? '' : selectedTag, 'push');
+      return;
+    }
+
+    const contentLink = event.target.closest('a[data-content-open]');
+    if (!contentLink) return;
+    const selectedItem = allItems.find((item) => itemKey(item) === contentLink.dataset.contentOpen);
+    logContentView(selectedItem);
   });
+
+  list.addEventListener('toggle', (event) => {
+    const details = event.target.closest('details[data-content-open]');
+    if (!details || !details.open) return;
+    const selectedItem = allItems.find((item) => itemKey(item) === details.dataset.contentOpen);
+    logContentView(selectedItem);
+  }, true);
 
   clearTagFilter.addEventListener('click', () => setTagFilter('', 'push'));
   window.addEventListener('popstate', () => {
