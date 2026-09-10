@@ -212,9 +212,15 @@ function getVisiblePrompts() {
   const q = searchQuery.trim().toLowerCase();
   const favoriteIds = getFavoriteIds();
   const recentIds = loadIdList(RECENT_KEY);
+  const hasQuery = Boolean(q);
+  // 輸入搜尋字詞時，預設跨分類搜尋；收藏、最近瀏覽與熱門仍保留各自範圍。
+  // 這樣使用者不會因為上一個選取的分類而誤以為全站沒有結果。
+  const isScopedFilter = ['favorites', 'recent', 'popular'].includes(currentCat);
 
   let items = activePrompts.filter(p => {
-    let matchCat = currentCat === 'all' || p.cat === currentCat;
+    let matchCat = hasQuery && !isScopedFilter
+      ? true
+      : currentCat === 'all' || p.cat === currentCat;
     if (currentCat === 'favorites') matchCat = favoriteIds.includes(Number(p.id));
     if (currentCat === 'recent') matchCat = recentIds.includes(Number(p.id));
     if (currentCat === 'popular') matchCat = true;
@@ -250,7 +256,11 @@ function updateSearchStatus(count) {
   if (!status) return;
 
   if (searchQuery.trim()) {
-    status.innerHTML = `找到 <strong>${count}</strong> 組符合「${escapeHtml(searchQuery.trim())}」的提示詞`;
+    const scoped = ['favorites', 'recent', 'popular'].includes(currentCat);
+    const scopeLabel = scoped && currentCat !== 'popular'
+      ? `（${currentCat === 'favorites' ? '我的收藏' : '最近瀏覽'}）`
+      : currentCat === 'popular' ? '（熱門提示詞）' : '（全站）';
+    status.innerHTML = `${scopeLabel}找到 <strong>${count}</strong> 組符合「${escapeHtml(searchQuery.trim())}」的提示詞`;
     status.classList.add('is-visible');
     if (clearButton) clearButton.classList.add('is-visible');
   } else {
