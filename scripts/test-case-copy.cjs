@@ -49,6 +49,7 @@ assert(context.copied.endsWith('CASE ONLY'));
 // Card actions must resolve data-case-index rather than the button position (two per case).
 assert(source.includes('cases[Number(caseButton.dataset.caseIndex)]'));
 assert(source.includes("caseButton.dataset.copyMode === 'case' ? context : buildCaseCopyText(id, context)"));
+const caseCount = vm.runInContext('CASES.length', context);
 // Clipboard success/failure: restore the exact original button label, no false success.
 vm.runInContext(extract('doCaseCopy'), context);
 let toasts = [], timers = [];
@@ -72,5 +73,5 @@ const button = () => ({textContent:'只複製案例情境', disabled:false, clas
   await new Promise(setImmediate);
   assert.equal(btn.disabled, false);
   assert(toasts.every(t => !t.includes('✓')));
-  console.log('PASS: all 540 simplified case contexts omit legacy answer prompts; parent lookup, modal modes, card wiring and clipboard states verified');
+  console.log(`PASS: all ${caseCount} simplified case contexts omit legacy answer prompts; parent lookup, modal modes, card wiring and clipboard states verified`);
 })().catch(error => { console.error(error); process.exitCode = 1; });
