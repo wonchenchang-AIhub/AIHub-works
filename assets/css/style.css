@@ -380,12 +380,13 @@ h1 {
 }
 
 .home-page h1 {
-  max-width: 760px;
+  max-width: none;
   margin: 0;
   font-family: "Noto Serif TC", "PMingLiU", serif;
-  font-size: clamp(3.2rem, 6.2vw, 5.75rem);
+  font-size: clamp(2.9rem, 5.2vw, 4.8rem);
   line-height: 1.04;
   letter-spacing: -0.055em;
+  white-space: nowrap;
 }
 
 .home-page h1 em {
