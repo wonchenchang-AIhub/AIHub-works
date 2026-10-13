@@ -383,15 +383,20 @@ h1 {
   max-width: none;
   margin: 0;
   font-family: "Noto Serif TC", "PMingLiU", serif;
-  font-size: clamp(2.9rem, 5.2vw, 4.8rem);
+  font-size: clamp(2.6rem, 4vw, 4rem);
   line-height: 1.04;
   letter-spacing: -0.055em;
+}
+
+.home-page .hero-title-line {
+  display: block;
+  width: max-content;
+  max-width: 100%;
   white-space: nowrap;
 }
 
-.home-page h1 em {
+.home-page .hero-title-accent {
   color: var(--vault-gold);
-  font-style: normal;
   text-shadow: 0 0 32px rgba(239, 198, 92, 0.2);
 }
 
@@ -693,7 +698,7 @@ h1 {
 
 @media (max-width: 680px) {
   .home-page h1 {
-    font-size: clamp(2.7rem, 14.7vw, 4.2rem);
+    font-size: clamp(2.15rem, 9.8vw, 3.4rem);
   }
 
   .vault-copy {
