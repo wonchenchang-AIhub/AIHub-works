@@ -198,6 +198,23 @@
     });
   }
 
+  function publicationDateKey(value) {
+    const match = /^(\d{4})([-/])(\d{1,2})\2(\d{1,2})$/.exec(String(value ?? '').trim());
+    if (!match) return 0;
+    const year = Number(match[1]);
+    const month = Number(match[3]);
+    const day = Number(match[4]);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 ||
+        date.getUTCDate() !== day) return 0;
+    return year * 10000 + month * 100 + day;
+  }
+
+  function manualOrder(value) {
+    const order = Number(value);
+    return Number.isFinite(order) ? order : 0;
+  }
+
   async function loadContent() {
     if (!apiUrl) {
       allItems = [];
@@ -216,6 +233,11 @@
         payload = await requestJsonp(fallbackApiUrl, 30000);
       }
       allItems = Array.isArray(payload && payload.items) ? payload.items : [];
+      if (page === 'tools') {
+        allItems = [...allItems].sort((a, b) =>
+          manualOrder(b.sort_order) - manualOrder(a.sort_order) ||
+          publicationDateKey(b.publish_date) - publicationDateKey(a.publish_date));
+      }
       render();
     } catch (error) {
       showError('後台連線失敗');
